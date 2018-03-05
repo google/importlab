@@ -37,7 +37,7 @@ class StoredFileSystem(FileSystem):
         return self.files[path]
 
 
-class FileSystem(FileSystem):
+class OSFileSystem(FileSystem):
     """File system that uses an OS file system underneath."""
 
     def __init__(self, root):
@@ -47,10 +47,10 @@ class FileSystem(FileSystem):
         self.path = path
 
     def isfile(self, path):
-        return c.isfile(self._join(path))
+        return os.path.isfile(self._join(path))
 
     def isdir(self, path):
-        return c.isfile(self._join(path))
+        return os.path.isdir(self._join(path))
 
     def read(self, path):
         with open(self._join(path), "r") as fi:
@@ -91,5 +91,9 @@ class TarFileSystem(object):
                    for top in self.top_level)
 
     def read(self, path):
-        return self.tar.read(path)
+        return tar.extractfile(path).read()
 
+    @staticmethod
+    def read_tarfile(archive_filename):
+        tar = tarfile.open(archive_filename)
+        return utils.TarFileSystem(tar)

@@ -33,11 +33,10 @@ class ModuleAndDependencies(object):
 
 
 class Resolver:
-    def __init__(self, fs, current_filename, root=None):
-        self.fs = fs
+    def __init__(self, fs_path, current_filename):
+        self.fs_path = fs_path
         self.current_filename = current_filename
         self.current_directory = os.path.dirname(current_filename)
-        self.root = root
 
     @staticmethod
     def convert_to_path(name):
@@ -84,20 +83,21 @@ class Resolver:
 
         # try absolute files
         init_file = os.path.join(filename, "__init__.py")
-        if self.fs.isdir(filename) and self.fs.isfile(init_file):
-            return init_file
-        elif self.fs.isfile(filename + ".py"):
-            return filename + ".py"
-        elif shortened is not None:
-            if item.is_relative():
-                filename = os.path.join(self.current_directory, shortened)
-            else:
-                filename = shortened
-            init_file = os.path.join(filename, "__init__.py")
-            if self.fs.isdir(filename) and self.fs.isfile(init_file):
-                return init_file
-            elif self.fs.isfile(filename + ".py"):
-                return filename + ".py"
+        for fs in self.fs_path:
+          if fs.isdir(filename) and fs.isfile(init_file):
+              return init_file
+          elif fs.isfile(filename + ".py"):
+              return filename + ".py"
+          elif shortened is not None:
+              if item.is_relative():
+                  filename = os.path.join(self.current_directory, shortened)
+              else:
+                  filename = shortened
+              init_file = os.path.join(filename, "__init__.py")
+              if fs.isdir(filename) and fs.isfile(init_file):
+                  return init_file
+              elif fs.isfile(filename + ".py"):
+                  return filename + ".py"
 
         # try system libraries
         #filename = os.path.join("/usr/lib/python2.7/", basename)
@@ -112,7 +112,7 @@ class Resolver:
               try:
                   yield self.resolve_import(import_item)
               except ImportException as err:
-                  self.fs.record_unknown_module(err.module_name)
+                  print "unknown module", err.module_name
 
 
 def show_import_tree(self, seen=None, indent=0):

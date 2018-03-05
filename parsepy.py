@@ -14,12 +14,8 @@
 
 """Logic for resolving import paths."""
 
-from __future__ import google_type_annotations
-
 import collections
 import io
-
-import google3
 
 from lib2to3 import pgen2
 from lib2to3 import pygram
