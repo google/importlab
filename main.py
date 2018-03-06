@@ -30,10 +30,10 @@ def parse_args():
     parser.add_argument('--tree', dest='tree', action='store_true',
                         default=False,
                         help='')
-    parser.add_argument('-P', dest='pythonpath', action='store',
+    parser.add_argument('-p', "--pythonpath", dest='pythonpath', action='store',
                         default='',
                         help='PYTHONPATH')
-    parser.add_argument('-t', dest='tarfile', action='store',
+    parser.add_argument('-t', "--tarfile", dest='tarfile', action='store',
                         default=None,
                         help='PYTHONPATH')
     return parser.parse_args()
