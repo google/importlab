@@ -10,15 +10,23 @@ class FileSystem(object):
 
     @abc.abstractmethod
     def isfile(self, path):
+        """Is this a file?"""
         pass
 
     @abc.abstractmethod
     def isdir(self, path):
+        """Is this a directory?"""
         pass
 
+    @abc.abstractmethod
     def read(self, path):
+        """Read a file."""
         pass
 
+    @abc.abstractmethod
+    def refer_to(self, path):
+        """Get a fully qualified path for the given path."""
+        pass
 
 class StoredFileSystem(FileSystem):
     """File system based on a file list."""
@@ -35,6 +43,9 @@ class StoredFileSystem(FileSystem):
 
     def read(self, path):
         return self.files[path]
+
+    def refer_to(self, path):
+        return path
 
 
 class OSFileSystem(FileSystem):
@@ -59,6 +70,9 @@ class OSFileSystem(FileSystem):
         with open(self._join(path), "r") as fi:
             return fi.read()
 
+    def refer_to(self, path):
+        return self._join(path)
+
 
 class PYIFileSystem(FileSystem):
     """File system that transparently changes .pyi to .py."""
@@ -72,8 +86,11 @@ class PYIFileSystem(FileSystem):
     def isdir(self, path):
         return self.underlying.isdir(path + "i")
 
-    def isdir(self, path):
+    def read(self, path):
         return self.underlying.read(path + "i")
+
+    def refer_to(self, path):
+        return self.underlying.refer_to(path + "i")
 
 
 class TarFileSystem(object):
@@ -95,6 +112,9 @@ class TarFileSystem(object):
 
     def read(self, path):
         return tar.extractfile(path).read()
+
+    def refer_to(self, path):
+        return "tar:" + path
 
     @staticmethod
     def read_tarfile(archive_filename):

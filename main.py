@@ -25,23 +25,44 @@ import resolve
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('filenames', metavar='filename', type=str, nargs='+',
-                        help='input file(s)')
-    parser.add_argument('--tree', dest='tree', action='store_true',
+    parser.add_argument("filenames", metavar="filename", type=str, nargs="+",
+                        help="input file(s)")
+    parser.add_argument("--tree", dest="tree", action="store_true",
                         default=False,
-                        help='')
-    parser.add_argument('-p', "--pythonpath", dest='pythonpath', action='store',
-                        default='',
-                        help='PYTHONPATH')
-    parser.add_argument('-t', "--tarfile", dest='tarfile', action='store',
+                        help="Display import tree.")
+    parser.add_argument("-P", "--python-version", dest="python_version", action="store",
+                        default="2.7",
+                        help="Python version for the project you\"re analyzing")
+    parser.add_argument("-p", "--pythonpath", dest="pythonpath", action="store",
+                        default="",
+                        help="PYTHONPATH")
+    parser.add_argument("-T", "--typeshed", dest="typeshed", action="store",
                         default=None,
-                        help='PYTHONPATH')
+                        help="Location of typeshed.")
     return parser.parse_args()
+
+
+def make_typeshed_path(typeshed_location, python_version):
+    """Get the names of all modules in typeshed and pytype/pytd/builtins."""
+    major = python_version[0]
+    subdirs = ["stdlib/%d" % major,
+               "stdlib/2and3",
+              ]
+    if major == 3:
+      for i in range(0, python_version[1] + 1):
+        # iterate over 3.0, 3.1, 3.2, ...
+        subdirs.append("stdlib/3.%d" % i)
+    return [fs.PYIFileSystem(fs.OSFileSystem(os.path.join(typeshed_location, subdir)))
+            for subdir in subdirs]
 
 
 def main():
     args = parse_args()
+    typeshed_location = args.typeshed or os.path.join(os.path.abspath(
+        os.path.dirname(__file__)), "typeshed")
+    python_version = [int(v) for v in args.python_version.split(".")]
     path = [fs.OSFileSystem(path) for path in args.pythonpath.split(".")]
+    path += make_typeshed_path(typeshed_location, python_version)
     for filename in args.filenames:
       r = resolve.Resolver(path, filename)
       for imported_filename in r.resolve_all(parsepy.scan_file(filename)):

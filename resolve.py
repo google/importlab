@@ -84,10 +84,10 @@ class Resolver:
         # try absolute files
         init_file = os.path.join(filename, "__init__.py")
         for fs in self.fs_path:
-          if fs.isdir(filename) and fs.isfile(init_file):
-              return init_file
+          if fs.isfile(init_file):
+              return fs.refer_to(init_file)
           elif fs.isfile(filename + ".py"):
-              return filename + ".py"
+              return fs.refer_to(filename + ".py")
           elif shortened is not None:
               if item.is_relative():
                   filename = os.path.join(self.current_directory, shortened)
@@ -95,14 +95,9 @@ class Resolver:
                   filename = shortened
               init_file = os.path.join(filename, "__init__.py")
               if fs.isdir(filename) and fs.isfile(init_file):
-                  return init_file
+                  return fs.refer_to(init_file)
               elif fs.isfile(filename + ".py"):
-                  return filename + ".py"
-
-        # try system libraries
-        #filename = os.path.join("/usr/lib/python2.7/", basename)
-        #if self.fs.isfile(filename + ".py"):
-        #    return filename + ".py"
+                  return fs.refer_to(filename + ".py")
 
         raise ImportException(name)
 
