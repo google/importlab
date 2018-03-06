@@ -26,8 +26,6 @@ from lib2to3.pgen2 import token
 from lib2to3.pgen2 import tokenize as tokenize2to3
 from lib2to3.pygram import python_symbols
 
-import typing
-
 
 class ParseError(Exception):
   pass

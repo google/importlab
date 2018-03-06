@@ -41,15 +41,18 @@ class OSFileSystem(FileSystem):
     """File system that uses an OS file system underneath."""
 
     def __init__(self, root):
+        assert root is not None
         self.root = root
 
     def _join(self, path):
-        self.path = path
+        return os.path.join(self.root, path)
 
     def isfile(self, path):
+        assert path is not None
         return os.path.isfile(self._join(path))
 
     def isdir(self, path):
+        assert path is not None
         return os.path.isdir(self._join(path))
 
     def read(self, path):
