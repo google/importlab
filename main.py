@@ -15,8 +15,9 @@
 """main entry point."""
 
 import argparse
-import sys
+import collections
 import os
+import sys
 
 import fs
 import parsepy
@@ -56,6 +57,53 @@ def make_typeshed_path(typeshed_location, python_version):
             for subdir in subdirs]
 
 
+class ImportGraph(object):
+    def __init__(self, path, typeshed_location):
+        self.path = path
+        self.typeshed_location = typeshed_location
+        self.deps = collections.defaultdict(set)
+
+    def get_file_deps(self, filename):
+        r = resolve.Resolver(self.path, filename)
+        imports = parsepy.scan_file(filename)
+        return [imported_filename
+                for imported_filename in r.resolve_all(imports)
+                if not imported_filename.endswith(".so")]
+
+    def add_file(self, filename):
+        for imported_filename in self.get_file_deps(filename):
+            self.deps[filename].add(imported_filename)
+
+    def add_file_recursive(self, filename):
+        queue = collections.deque([filename])
+        while queue:
+            filename = queue.popleft()
+            deps = self.get_file_deps(filename)
+            for f in deps:
+                self.deps[filename].add(f)
+                if not f in self.deps and f.endswith(".py"):
+                    queue.append(f)
+
+    def print_edges(self):
+        keys = self.deps.keys()
+        prefix = os.path.commonprefix(keys)
+        if not os.path.isdir(prefix):
+            prefix = os.path.dirname(prefix)
+
+        print prefix
+        for key in sorted(keys):
+            for value in sorted(self.deps[key]):
+                k = os.path.relpath(key, prefix)
+                if value.startswith(self.typeshed_location):
+                    v = "[%s]" % os.path.relpath(value, self.typeshed_location)
+                else:
+                    v = os.path.relpath(value, prefix)
+                print "  %s -> %s" % (k, v)
+
+    def print_tree(self):
+       pass
+
+
 def main():
     args = parse_args()
     typeshed_location = args.typeshed or os.path.join(os.path.abspath(
@@ -63,11 +111,12 @@ def main():
     python_version = [int(v) for v in args.python_version.split(".")]
     path = [fs.OSFileSystem(path) for path in args.pythonpath.split(".")]
     path += make_typeshed_path(typeshed_location, python_version)
+    graph = ImportGraph(path, typeshed_location)
     for filename in args.filenames:
-      r = resolve.Resolver(path, filename)
-      for imported_filename in r.resolve_all(parsepy.scan_file(filename)):
-        if not imported_filename.endswith(".so"):
-          print filename, "->", imported_filename
+        graph.add_file(filename)
+
+    graph.print_edges()
+
 
 
 if __name__ == "__main__":
