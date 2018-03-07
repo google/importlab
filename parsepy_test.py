@@ -17,9 +17,7 @@
 import textwrap
 import unittest
 
-import google3
-
-from importlab import parsepy
+import parsepy
 
 
 class TestParsePy(unittest.TestCase):

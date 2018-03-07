@@ -19,6 +19,7 @@ import sys
 import os
 
 import fs
+import graph
 import parsepy
 import resolve
 
@@ -63,11 +64,30 @@ def main():
     python_version = [int(v) for v in args.python_version.split(".")]
     path = [fs.OSFileSystem(path) for path in args.pythonpath.split(".")]
     path += make_typeshed_path(typeshed_location, python_version)
-    for filename in args.filenames:
-      r = resolve.Resolver(path, filename)
-      for imported_filename in r.resolve_all(parsepy.scan_file(filename)):
-        if not imported_filename.endswith(".so"):
-          print filename, "->", imported_filename
+    file_nodes = graph.FileCollection(graph.File(filename)
+                                      for filename in args.filenames)
+    for file_node in file_nodes:
+        filename = file_node.path
+        r = resolve.Resolver(path, filename)
+        for imported_filename in r.resolve_all(parsepy.scan_file(filename)):
+            if imported_filename.endswith(".so"):
+                pass  # ignore system libraries
+            elif imported_filename.endswith(".pyi"):
+                pass  # leave pyi files alone
+            elif imported_filename in file_nodes.files:
+                file_node.deps.append(file_nodes.files[imported_filename])
+            else:
+                # We found this dependency, but it's not the list of files we're
+                # going to type-check. It might either be a typeshed file, or
+                # some other library the user put into their PYTHONPATH.
+                # TODO: We might want to do type inference on these files anyway,
+                # so we get better type-checking on the files that depend on
+                # them.
+                pass
+
+    for file_node in file_nodes:
+        for dep in file_node.deps:
+            print file_node.path, "->", dep.path
 
 
 if __name__ == "__main__":
