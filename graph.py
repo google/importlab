@@ -1,4 +1,7 @@
 import collections
+import resolve
+import parsepy
+import os
 
 class File(object):
     """A file in the file system. E.g. "/foo/bar/baz.py".
@@ -51,29 +54,45 @@ class ImportGraph(object):
         self.path = path
         self.typeshed_location = typeshed_location
         self.deps = collections.defaultdict(set)
+        self.broken_deps = collections.defaultdict(set)
 
     def get_file_deps(self, filename):
         r = resolve.Resolver(self.path, filename)
-        imports = parsepy.scan_file(filename)
-        return [imported_filename
-                for imported_filename in r.resolve_all(imports)
-                if not imported_filename.endswith(".so")]
+        resolved = []
+        unresolved = []
+        for imp in parsepy.scan_file(filename):
+            try:
+                f = r.resolve_import(imp)
+                if not f.endswith(".so"):
+                    resolved.append(os.path.abspath(f))
+            except resolve.ImportException:
+                unresolved.append(imp)
+        return (resolved, unresolved)
 
     def add_file(self, filename):
-        for imported_filename in self.get_file_deps(filename):
+        resolved, unresolved = self.get_file_deps(filename)
+        for imported_filename in resolved:
             self.deps[filename].add(imported_filename)
+        for imp in unresolved:
+            self.broken_deps[filename].add(imp)
 
     def add_file_recursive(self, filename):
         queue = collections.deque([filename])
+        seen = set()
         while queue:
             filename = queue.popleft()
-            deps = self.get_file_deps(filename)
+            deps, broken = self.get_file_deps(filename)
+            for f in broken:
+                self.broken_deps[filename].add(f)
             for f in deps:
                 self.deps[filename].add(f)
-                if not f in self.deps and f.endswith(".py"):
+                if (not f in self.deps and
+                    not f in seen and
+                    f.endswith(".py")):
                     queue.append(f)
+                    seen.add(f)
 
-    def print_edges(self):
+    def inspect_edges(self):
         keys = self.deps.keys()
         prefix = os.path.commonprefix(keys)
         if not os.path.isdir(prefix):
@@ -81,13 +100,15 @@ class ImportGraph(object):
 
         print prefix
         for key in sorted(keys):
+            k = os.path.relpath(key, prefix)
             for value in sorted(self.deps[key]):
-                k = os.path.relpath(key, prefix)
                 if value.startswith(self.typeshed_location):
                     v = "[%s]" % os.path.relpath(value, self.typeshed_location)
                 else:
                     v = os.path.relpath(value, prefix)
                 print "  %s -> %s" % (k, v)
+            for value in sorted(self.broken_deps[key]):
+                print "  %s -> <%s>" % (k, value)
 
     def print_tree(self):
        pass

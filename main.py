@@ -58,6 +58,14 @@ def make_typeshed_path(typeshed_location, python_version):
             for subdir in subdirs]
 
 
+def recursive_import(filename, path, typeshed_location):
+    imports = graph.ImportGraph(path, typeshed_location)
+    for filename in args.filenames:
+        imports.add_file_recursive(filename)
+    imports.inspect_edges()
+    sys.exit(0)
+
+
 def main():
     args = parse_args()
     typeshed_location = args.typeshed or os.path.join(os.path.abspath(
