@@ -186,6 +186,15 @@ class TestParsePy(unittest.TestCase):
                                    new_name="print_function", is_from=True),
            parsepy.ImportStatement(name="sys")])
 
+  def test_non_utf8(self):
+    """Verify that we can parse files with non-utf8 encoding."""
+    src = (
+        b"# -*- coding: iso-8859-1 -*-\n" +
+        b"# Copyright (C) 1984 F" + chr(0xf6) + b"man\n"
+    )
+    self.assertRaises(UnicodeDecodeError, unicode, src)
+    self.assertItemsEqual(self.parse(src), [])
+
 
 if __name__ == "__main__":
   unittest.main()
