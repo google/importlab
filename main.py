@@ -58,21 +58,15 @@ def make_typeshed_path(typeshed_location, python_version):
             for subdir in subdirs]
 
 
-def recursive_import(filename, path, typeshed_location):
+def recursive_import(args, path, typeshed_location):
     imports = graph.ImportGraph(path, typeshed_location)
     for filename in args.filenames:
         imports.add_file_recursive(filename)
-    imports.inspect_edges()
+    imports.inspect_graph()
     sys.exit(0)
 
 
-def main():
-    args = parse_args()
-    typeshed_location = args.typeshed or os.path.join(os.path.abspath(
-        os.path.dirname(__file__)), "typeshed")
-    python_version = [int(v) for v in args.python_version.split(".")]
-    path = [fs.OSFileSystem(path) for path in args.pythonpath.split(".")]
-    path += make_typeshed_path(typeshed_location, python_version)
+def toplevel_import(args, path):
     file_nodes = graph.FileCollection(graph.File(filename)
                                       for filename in args.filenames)
     for file_node in file_nodes:
@@ -97,6 +91,18 @@ def main():
     for file_node in file_nodes:
         for dep in file_node.deps:
             print file_node.path, "->", dep.path
+
+
+def main():
+    args = parse_args()
+    typeshed_location = args.typeshed or os.path.join(os.path.abspath(
+        os.path.dirname(__file__)), "typeshed")
+    python_version = [int(v) for v in args.python_version.split(".")]
+    path = [fs.OSFileSystem(path) for path in args.pythonpath.split(".")]
+    path += make_typeshed_path(typeshed_location, python_version)
+    #---------------------------------------
+    recursive_import(args, path, typeshed_location)
+    #toplevel_import(args, path)
 
 
 if __name__ == "__main__":
