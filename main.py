@@ -62,8 +62,9 @@ def recursive_import(args, path, typeshed_location):
     imports = graph.ImportGraph(path, typeshed_location)
     for filename in args.filenames:
         imports.add_file_recursive(filename)
-    imports.inspect_graph()
-    sys.exit(0)
+    #imports.inspect_graph()
+    imports.collapse_cycles()
+    imports.print_topological_sort()
 
 
 def toplevel_import(args, path):

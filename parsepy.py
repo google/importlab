@@ -61,7 +61,10 @@ class ImportStatement(collections.namedtuple(
       assert self.is_from
       return "from " + self.name + " import *"
     if self.is_from:
-      left, right = self.name.rsplit(".", 2)
+      try:
+        left, right = self.name.rsplit(".", 2)
+      except ValueError:
+        left, right = self.name, ""
       module = left + "[." + right + "]"
     else:
       module = self.name
