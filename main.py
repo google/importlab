@@ -61,7 +61,8 @@ def make_typeshed_path(typeshed_location, python_version):
 def recursive_import(args, path, typeshed_location):
     imports = graph.ImportGraph(path, typeshed_location)
     for filename in args.filenames:
-        imports.add_file_recursive(filename)
+        imports.add_file_recursive(
+            os.path.abspath(filename))
     #imports.inspect_graph()
     imports.collapse_cycles()
     imports.print_topological_sort()
