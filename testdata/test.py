@@ -1,1 +1,1 @@
-from pkg import a
+from .pkg import a

@@ -62,13 +62,13 @@ class Cycle(object):
         else:
             return os.path.relpath(node, self.root)
 
-    def flatten_nodes(self, edges):
+    def flatten_nodes(self):
         out = []
-        for k, _ in edges:
-            if isinstance(k, Cycle):
-                out.extend(k.nodes)
+        for n in self.nodes:
+            if isinstance(n, Cycle):
+                out.extend(n.flatten_nodes())
             else:
-                out.append(k)
+                out.append(n)
         return out
 
     def __contains__(self, v):
@@ -90,7 +90,7 @@ class ImportGraph(object):
         self.typeshed_location = typeshed_location
         self.broken_deps = collections.defaultdict(set)
         self.graph = nx.DiGraph()
-        self.root = ""
+        self.root = None
 
     def get_file_deps(self, filename):
         r = resolve.Resolver(self.path, filename)
@@ -182,6 +182,19 @@ class ImportGraph(object):
                 self.extract_cycle(cycle)
             except nx.NetworkXNoCycle:
                 break
+
+    def deps_list(self):
+        out = []
+        for node in nx.topological_sort(self.graph):
+            if isinstance(node, Cycle):
+                out.append(node.flatten_nodes())
+            elif node.endswith(".py"):
+                # add a one-element list for uniformity
+                out.append([node])
+            else:
+                # We don't care about pyi deps
+                pass
+        return reversed(out)
 
     def _print_tree(self, root, seen, indent=0):
         if root in seen:

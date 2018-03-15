@@ -22,6 +22,7 @@ import sys
 import fs
 import graph
 import parsepy
+import pytype
 import resolve
 
 
@@ -44,6 +45,16 @@ def parse_args():
     return parser.parse_args()
 
 
+def process_pythonpath(pythonpath):
+    dirs = pythonpath.split(os.pathsep)
+    out = []
+    for d in dirs:
+        d = os.path.expanduser(d)
+        d = os.path.realpath(d)
+        out.append(d)
+    return ":".join(out)
+
+
 def make_typeshed_path(typeshed_location, python_version):
     """Get the names of all modules in typeshed and pytype/pytd/builtins."""
     major = python_version[0]
@@ -61,11 +72,13 @@ def make_typeshed_path(typeshed_location, python_version):
 def recursive_import(args, path, typeshed_location):
     imports = graph.ImportGraph(path, typeshed_location)
     for filename in args.filenames:
-        imports.add_file_recursive(
-            os.path.abspath(filename))
-    #imports.inspect_graph()
+        imports.add_file_recursive(os.path.abspath(filename))
     imports.collapse_cycles()
-    imports.print_topological_sort()
+    runner = pytype.Runner(imports, {
+        'python_version': '3.6',
+        'pythonpath': args.pythonpath,
+    })
+    runner.run()
 
 
 def toplevel_import(args, path):
@@ -97,10 +110,11 @@ def toplevel_import(args, path):
 
 def main():
     args = parse_args()
+    args.pythonpath = process_pythonpath(args.pythonpath)
     typeshed_location = args.typeshed or os.path.join(os.path.abspath(
         os.path.dirname(__file__)), "typeshed")
     python_version = [int(v) for v in args.python_version.split(".")]
-    path = [fs.OSFileSystem(path) for path in args.pythonpath.split(".")]
+    path = [fs.OSFileSystem(path) for path in args.pythonpath.split(os.pathsep)]
     path += make_typeshed_path(typeshed_location, python_version)
     #---------------------------------------
     recursive_import(args, path, typeshed_location)
