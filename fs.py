@@ -1,6 +1,7 @@
+import abc
 import os
 import sys
-import abc
+import tarfile
 
 
 class FileSystem(object):
@@ -111,7 +112,7 @@ class TarFileSystem(object):
                    for top in self.top_level)
 
     def read(self, path):
-        return tar.extractfile(path).read()
+        return self.tar.extractfile(path).read()
 
     def refer_to(self, path):
         return "tar:" + path
@@ -119,4 +120,4 @@ class TarFileSystem(object):
     @staticmethod
     def read_tarfile(archive_filename):
         tar = tarfile.open(archive_filename)
-        return utils.TarFileSystem(tar)
+        return TarFileSystem(tar)

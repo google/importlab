@@ -67,7 +67,9 @@ class Runner(object):
               path += os.sep
           if filename.startswith(path):
               filename = filename[len(path):]
-          return (path, filename_to_module_name(filename))
+              return (path, filename_to_module_name(filename))
+      # We have not found filename relative to path.
+      return '', filename_to_module_name(filename)
 
   def run_pytype(self, filename, root, quick=False):
       path, module_name = self.infer_module_name(filename)
