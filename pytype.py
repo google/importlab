@@ -53,7 +53,10 @@ class Runner(object):
   def __init__(self, imports, args):
     self.imports = imports
     self.args = args
-    self.pythonpath = args.get('pythonpath', [imports.find_root()])
+    if 'pythonpath' in args:
+      self.pythonpath = args['pythonpath'].split(':')
+    else:
+      self.pythonpath = [imports.find_root()]
 
   def infer_module_name(self, filename):
       filename, _ = os.path.splitext(filename)
@@ -64,16 +67,16 @@ class Runner(object):
               path += os.sep
           if filename.startswith(path):
               filename = filename[len(path):]
-          return filename_to_module_name(filename)
+          return (path, filename_to_module_name(filename))
 
   def run_pytype(self, filename, root, quick=False):
-      module_name = self.infer_module_name(filename)
-      out = os.path.relpath(filename, root)
+      path, module_name = self.infer_module_name(filename)
+      out = os.path.relpath(filename, path)
       out = os.path.join('pyi', out + 'i')
       if quick:
-        print "  %s*" % out
+        print("  %s*" % out)
       else:
-        print "  %s" % out
+        print("  %s" % out)
       try:
           os.makedirs(os.path.dirname(out))
       except:
@@ -92,13 +95,16 @@ class Runner(object):
       ]
       if quick:
           run_cmd += ['--quick']
+      print(" ".join(run_cmd))
       run = BinaryRun(run_cmd + [filename])
-      run.communicate()
+      returncode, _, stderr = run.communicate()
+      if returncode:
+        print(stderr.decode("utf-8"))
 
   def run(self):
     root = self.imports.find_root()
     deps = list(self.imports.deps_list())
-    print "Generating %d targets" % sum(len(x) for x in deps)
+    print("Generating %d targets" % sum(len(x) for x in deps))
     for files in deps:
         if len(files) == 1:
             self.run_pytype(files[0], root)

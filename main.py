@@ -1,3 +1,5 @@
+#!/usr/bin/env python3.6
+
 # Copyright 2017 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -75,7 +77,7 @@ def recursive_import(args, path, typeshed_location):
         imports.add_file_recursive(os.path.abspath(filename))
     imports.collapse_cycles()
     runner = pytype.Runner(imports, {
-        'python_version': '3.6',
+        'python_version': args.python_version,
         'pythonpath': args.pythonpath,
     })
     runner.run()
@@ -105,7 +107,7 @@ def toplevel_import(args, path):
 
     for file_node in file_nodes:
         for dep in file_node.deps:
-            print file_node.path, "->", dep.path
+            print("%s -> %s" % (file_node.path, dep.path))
 
 
 def main():

@@ -107,7 +107,7 @@ class Resolver:
               try:
                   yield self.resolve_import(import_item)
               except ImportException as err:
-                  print "unknown module", err.module_name
+                  print("unknown module", err.module_name)
 
 
 def show_import_tree(self, seen=None, indent=0):
@@ -118,9 +118,9 @@ def show_import_tree(self, seen=None, indent=0):
         seen.add(imported.name)
         try:
             mod = self.resolve_import(imported.name)
-            print " "*(indent*4) + str(imported)
+            print(" "*(indent*4) + str(imported))
             mod.show_import_tree(seen, indent+1)
         except ImportException as err:
             # mark import we didn't find with '!'
-            print " "*(indent*4) + "!" + str(imported)
+            print(" "*(indent*4) + "!" + str(imported))
 

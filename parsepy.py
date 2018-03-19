@@ -95,10 +95,10 @@ class Parser(object):
     """Parse a program string and remove unwanted outer levels in AST."""
     # see lib2to3.tests.support.parse_string -- but we don't do the dedent
     # (support.reformat)
-    if not isinstance(code_str, unicode):
+    if not isinstance(code_str, str):
       encoding, _ = tokenize2to3.detect_encoding(
           io.BytesIO(code_str).readline)
-      code_str = unicode(code_str, encoding)
+      code_str = str(code_str, encoding)
     features = refactor._detect_future_features(code_str)  # pylint: disable=protected-access
     if "print_function" in features:
       driver = self._drivers["no_print_statement"]

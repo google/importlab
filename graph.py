@@ -135,7 +135,7 @@ class ImportGraph(object):
     def find_root(self, recalculate=False):
         if recalculate or not self.root:
             keys = set(x[0] for x in self.graph.edges)
-            prefix = os.path.commonprefix(keys)
+            prefix = os.path.commonprefix(list(keys))
             if not os.path.isdir(prefix):
                 prefix = os.path.dirname(prefix)
             self.root = prefix
@@ -170,9 +170,9 @@ class ImportGraph(object):
             k = self.format(key)
             for _, value in sorted(self.graph.edges([key])):
                 v = self.format(value)
-                print "  %s -> %s" % (k, v)
+                print("  %s -> %s" % (k, v))
             for value in sorted(self.broken_deps[key]):
-                print "  %s -> <%s>" % (k, value)
+                print("  %s -> <%s>" % (k, value))
 
     def collapse_cycles(self):
         prefix = self.find_root()
@@ -202,7 +202,7 @@ class ImportGraph(object):
         if not isinstance(root, Cycle) and root.endswith(".pyi"):
             return
         seen.add(root)
-        print " "*indent + self.format(root)
+        print(" "*indent + self.format(root))
         for _, v in self.graph.edges([root]):
             self._print_tree(v, seen, indent=indent+2)
 
@@ -214,4 +214,4 @@ class ImportGraph(object):
     def print_topological_sort(self):
         for node in nx.topological_sort(self.graph):
             if isinstance(node, Cycle) or node.endswith(".py"):
-                print self.format(node)
+                print(self.format(node))
