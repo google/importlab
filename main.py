@@ -75,19 +75,9 @@ def recursive_import(args, path, typeshed_location):
     imports = graph.ImportGraph(path, typeshed_location)
     for filename in args.filenames:
         imports.add_file_recursive(os.path.abspath(filename))
-    imports.collapse_cycles()
-    for node, deps in imports.deps_list():
-        print("target: ", imports.format(node))
-        print("deps:")
-        for dep in deps:
-            print("  " + imports.format(dep))
-        print()
-    return
-    runner = pytype.Runner(imports, {
-        'python_version': args.python_version,
-        'pythonpath': args.pythonpath,
-    })
-    runner.run()
+    imports.build()
+    imports.print_deps_list()
+    return imports
 
 
 def toplevel_import(args, path):
@@ -126,8 +116,12 @@ def main():
     path = [fs.OSFileSystem(path) for path in args.pythonpath.split(os.pathsep)]
     path += make_typeshed_path(typeshed_location, python_version)
     #---------------------------------------
-    recursive_import(args, path, typeshed_location)
-    #toplevel_import(args, path)
+    imports = recursive_import(args, path, typeshed_location)
+    runner = pytype.Runner(imports, {
+        'python_version': args.python_version,
+        'pythonpath': args.pythonpath,
+    })
+    runner.run()
 
 
 if __name__ == "__main__":

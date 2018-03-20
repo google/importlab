@@ -106,7 +106,7 @@ class Runner(object):
 
   def run(self):
     root = self.imports.find_root()
-    deps = list(self.imports.deps_list())
+    deps = list(self.imports.sorted_source_files())
     print("Generating %d targets" % sum(len(x) for x in deps))
     for files in deps:
         if len(files) == 1:

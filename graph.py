@@ -51,6 +51,8 @@ class FileCollection(object):
 
 
 class Cycle(object):
+    """A cycle of nodes, some of which might be cycles."""
+
     def __init__(self, edges, root=''):
         self.root = root
         self.edges = edges
@@ -75,25 +77,60 @@ class Cycle(object):
         return v in self.nodes
 
     def pp(self):
-        return "[" + '->'.join([self._fmt(f) for f in self.flatten_nodes()]) + "]"
-
-    def __repr__(self):
-        return "Cycle(" + str(sorted(self.nodes)) + ")"
+        return "Cycle(" + '->'.join([self._fmt(f) for f in self.nodes]) + ")"
 
     def __str__(self):
         return self.pp()
 
 
+class NodeSet(object):
+    """The flattened version of a cycle - a set of mutually dependent files."""
+
+    def __init__(self, cycle):
+        self.root = cycle.root
+        self.nodes = cycle.flatten_nodes()
+
+    def __contains__(self, v):
+        return v in self.nodes
+
+    def _fmt(self, node):
+        return os.path.relpath(node, self.root)
+
+    def pp(self):
+        return "[" + '->'.join([self._fmt(f) for f in self.nodes]) + "]"
+
+    def __str__(self):
+        return self.pp()
+
+    def __len__(self):
+        return len(self.nodes)
+
+    def __iter__(self):
+        return self.nodes.__iter__()
+
+
 def is_source_node(x):
-   return isinstance(x, Cycle) or x.endswith(".py")
+    return isinstance(x, (Cycle, NodeSet)) or x.endswith(".py")
+
 
 class ImportGraph(object):
+    """A set of dependencies stored in a graph structure.
+
+    The ImportGraph needs to be constructed in two phases:
+    1. Call add_file_recursive() for every root file you want to add to the graph.
+    2. Call build() to collapse cycles and build the final graph.
+
+    Calling build() sets self.final = True and treats the graph as immutable
+    thereafter.
+    """
+
     def __init__(self, path, typeshed_location):
         self.path = path
         self.typeshed_location = typeshed_location
         self.broken_deps = collections.defaultdict(set)
         self.graph = nx.DiGraph()
         self.root = None
+        self.final = False
 
     def get_file_deps(self, filename):
         r = resolve.Resolver(self.path, filename)
@@ -109,6 +146,9 @@ class ImportGraph(object):
         return (resolved, unresolved)
 
     def add_file(self, filename):
+        """Add a file and all its immediate dependencies to the graph."""
+
+        assert not self.final, "Trying to mutate a final graph."
         resolved, unresolved = self.get_file_deps(filename)
         self.graph.add_node(filename)
         for f in resolved:
@@ -118,6 +158,9 @@ class ImportGraph(object):
             self.broken_deps[filename].add(imp)
 
     def add_file_recursive(self, filename):
+        """Add a file and all its recursive dependencies to the graph."""
+
+        assert not self.final, "Trying to mutate a final graph."
         queue = collections.deque([filename])
         seen = set()
         while queue:
@@ -145,6 +188,7 @@ class ImportGraph(object):
         return self.root
 
     def extract_cycle(self, cycle):
+        assert not self.final, "Trying to mutate a final graph."
         self.graph.add_node(cycle)
         edges = list(self.graph.edges)
         for k, v in edges:
@@ -159,7 +203,7 @@ class ImportGraph(object):
 
     def format(self, node):
         prefix = self.find_root()
-        if isinstance(node, Cycle):
+        if isinstance(node, (Cycle, NodeSet)):
             return node.pp()
         elif node.startswith(self.typeshed_location):
             return "[%s]" % os.path.relpath(node, self.typeshed_location)
@@ -177,7 +221,12 @@ class ImportGraph(object):
             for value in sorted(self.broken_deps[key]):
                 print("  %s -> <%s>" % (k, value))
 
-    def collapse_cycles(self):
+    def build(self):
+        """Finalise the graph, after adding all input files to it."""
+
+        assert not self.final, "Trying to mutate a final graph."
+
+        # Recursively extract cycles until the graph is cycle-free.
         prefix = self.find_root()
         while True:
             try:
@@ -186,12 +235,24 @@ class ImportGraph(object):
             except nx.NetworkXNoCycle:
                 break
 
+        # Now that we have reduced the graph to a tree, we can flatten cycle
+        # nodes into NodeSets
+        def transform_node(node):
+            if isinstance(node, Cycle):
+                return NodeSet(node)
+            else:
+                return node
+        self.graph = nx.relabel_nodes(self.graph, transform_node)
+        self.final = True
+
     def sorted_source_files(self):
         """Returns a list of targets in topologically sorted order."""
+
+        assert self.final, "Call build() before using the graph."
         out = []
         for node in nx.topological_sort(self.graph):
-            if isinstance(node, Cycle):
-                out.append(node.flatten_nodes())
+            if isinstance(node, NodeSet):
+                out.append(node.nodes)
             elif node.endswith(".py"):
                 # add a one-element list for uniformity
                 out.append([node])
@@ -202,6 +263,8 @@ class ImportGraph(object):
 
     def deps_list(self):
         """Returns a list of (target, dependencies)."""
+
+        assert self.final, "Call build() before using the graph."
         out = []
         for node in nx.topological_sort(self.graph):
             if is_source_node(node):
@@ -229,3 +292,11 @@ class ImportGraph(object):
         for node in nx.topological_sort(self.graph):
             if is_source_node(node):
                 print(self.format(node))
+
+    def print_deps_list(self):
+        for node, deps in self.deps_list():
+            print("source: ", self.format(node))
+            print("deps:")
+            for dep in deps:
+                print("  " + self.format(dep))
+            print()
