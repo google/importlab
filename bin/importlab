@@ -21,11 +21,11 @@ import collections
 import os
 import sys
 
-import fs
-import graph
-import parsepy
-import pytype
-import resolve
+from importlab import fs
+from importlab import graph
+from importlab import parsepy
+from importlab import pytype
+from importlab import resolve
 
 
 def parse_args():

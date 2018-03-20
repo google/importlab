@@ -17,7 +17,7 @@
 import textwrap
 import unittest
 
-import parsepy
+from . import parsepy
 
 
 class TestParsePy(unittest.TestCase):

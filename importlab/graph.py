@@ -1,8 +1,10 @@
 import collections
-import resolve
-import parsepy
 import os
+
 import networkx as nx
+
+from . import resolve
+from . import parsepy
 
 
 class Cycle(object):
