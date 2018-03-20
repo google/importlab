@@ -76,6 +76,13 @@ def recursive_import(args, path, typeshed_location):
     for filename in args.filenames:
         imports.add_file_recursive(os.path.abspath(filename))
     imports.collapse_cycles()
+    for node, deps in imports.deps_list():
+        print("target: ", imports.format(node))
+        print("deps:")
+        for dep in deps:
+            print("  " + imports.format(dep))
+        print()
+    return
     runner = pytype.Runner(imports, {
         'python_version': args.python_version,
         'pythonpath': args.pythonpath,

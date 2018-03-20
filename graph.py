@@ -75,7 +75,7 @@ class Cycle(object):
         return v in self.nodes
 
     def pp(self):
-        return "[" + '->'.join([self._fmt(f) for f in self.nodes]) + "]"
+        return "[" + '->'.join([self._fmt(f) for f in self.flatten_nodes()]) + "]"
 
     def __repr__(self):
         return "Cycle(" + str(sorted(self.nodes)) + ")"
@@ -83,6 +83,9 @@ class Cycle(object):
     def __str__(self):
         return self.pp()
 
+
+def is_source_node(x):
+   return isinstance(x, Cycle) or x.endswith(".py")
 
 class ImportGraph(object):
     def __init__(self, path, typeshed_location):
@@ -183,7 +186,8 @@ class ImportGraph(object):
             except nx.NetworkXNoCycle:
                 break
 
-    def deps_list(self):
+    def sorted_source_files(self):
+        """Returns a list of targets in topologically sorted order."""
         out = []
         for node in nx.topological_sort(self.graph):
             if isinstance(node, Cycle):
@@ -196,22 +200,32 @@ class ImportGraph(object):
                 pass
         return reversed(out)
 
+    def deps_list(self):
+        """Returns a list of (target, dependencies)."""
+        out = []
+        for node in nx.topological_sort(self.graph):
+            if is_source_node(node):
+                deps = [v for k, v in self.graph.out_edges([node])
+                        if is_source_node(v)]
+                out.append((node, deps))
+        return out
+
     def _print_tree(self, root, seen, indent=0):
         if root in seen:
             return
-        if not isinstance(root, Cycle) and root.endswith(".pyi"):
+        if not is_source_node(root):
             return
         seen.add(root)
         print(" "*indent + self.format(root))
-        for _, v in self.graph.edges([root]):
+        for _, v in self.graph.out_edges([root]):
             self._print_tree(v, seen, indent=indent+2)
 
     def print_tree(self):
-        root = nx.topological_sort(self.graph).next()
+        root = next(nx.topological_sort(self.graph))
         seen = set()
         self._print_tree(root, seen)
 
     def print_topological_sort(self):
         for node in nx.topological_sort(self.graph):
-            if isinstance(node, Cycle) or node.endswith(".py"):
+            if is_source_node(node):
                 print(self.format(node))
