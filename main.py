@@ -80,33 +80,6 @@ def recursive_import(args, path, typeshed_location):
     return imports
 
 
-def toplevel_import(args, path):
-    file_nodes = graph.FileCollection(graph.File(filename)
-                                      for filename in args.filenames)
-    for file_node in file_nodes:
-        filename = file_node.path
-        r = resolve.Resolver(path, filename)
-        for imported_filename in r.resolve_all(parsepy.scan_file(filename)):
-            if imported_filename.endswith(".so"):
-                pass  # ignore system libraries
-            elif imported_filename.endswith(".pyi"):
-                pass  # leave pyi files alone
-            elif imported_filename in file_nodes.files:
-                file_node.deps.append(file_nodes.files[imported_filename])
-            else:
-                # We found this dependency, but it's not the list of files we're
-                # going to type-check. It might either be a typeshed file, or
-                # some other library the user put into their PYTHONPATH.
-                # TODO: We might want to do type inference on these files anyway,
-                # so we get better type-checking on the files that depend on
-                # them.
-                pass
-
-    for file_node in file_nodes:
-        for dep in file_node.deps:
-            print("%s -> %s" % (file_node.path, dep.path))
-
-
 def main():
     args = parse_args()
     args.pythonpath = process_pythonpath(args.pythonpath)
