@@ -5,6 +5,8 @@ import re
 import subprocess
 import sys
 
+from . import utils
+
 class BinaryRun(object):
     def __init__(self, args, dry_run=False, env=None):
         self.args = args
@@ -50,71 +52,88 @@ def filename_to_module_name(filename):
 
 
 class Runner(object):
-  def __init__(self, imports, args):
-    self.imports = imports
-    self.args = args
-    if 'pythonpath' in args:
-      self.pythonpath = args['pythonpath'].split(':')
-    else:
-      self.pythonpath = [imports.find_root()]
-    self.env = {b'TYPESHED_HOME': args['typeshed_location'].encode('utf-8')}
-
-
-  def infer_module_name(self, filename):
-      filename, _ = os.path.splitext(filename)
-      # We want '' in our lookup path, but we don't want it for prefix tests.
-      for path in filter(bool, self.pythonpath):
-          path = os.path.abspath(path)
-          if not path.endswith(os.sep):
-              path += os.sep
-          if filename.startswith(path):
-              filename = filename[len(path):]
-              return (path, filename_to_module_name(filename))
-      # We have not found filename relative to path.
-      return '', filename_to_module_name(filename)
-
-  def run_pytype(self, filename, root, quick=False):
-      path, module_name = self.infer_module_name(filename)
-      out = os.path.relpath(filename, path)
-      out = os.path.join('pyi', out + 'i')
-      if quick:
-        print("  %s*" % out)
+    def __init__(self, imports, args):
+      self.imports = imports
+      self.args = args
+      if 'pythonpath' in args:
+        self.pythonpath = args['pythonpath'].split(':')
       else:
-        print("  %s" % out)
+        self.pythonpath = [imports.find_root()]
+      self.env = {b'TYPESHED_HOME': args['typeshed_location'].encode('utf-8')}
+      self.output_dir = 'importlab_output'
+      self.pyi_dir = os.path.join(self.output_dir, 'pyi')
       try:
-          os.makedirs(os.path.dirname(out))
+          os.makedirs(self.output_dir)
       except:
           pass
-      pytype_exe = 'pytype'
-      if not can_run('', pytype_exe, '-h'):
-          print('Cannot find pytype in path.')
-          return 0, 0
+      self.log_file = os.path.join(self.output_dir, 'pytype.log')
+      self.logger = utils.setup_logging('pytype', self.log_file)
 
-      run_cmd = [
-          pytype_exe,
-          '-P', 'pyi',
-          '-V', self.args['python_version'],
-          '-o', out,
-          '--module-name', module_name
-      ]
-      if quick:
-          run_cmd += ['--quick', '--no-report-errors']
-      run_cmd = run_cmd + [filename]
-      print(" ".join(run_cmd))
-      run = BinaryRun(run_cmd, env=self.env)
-      returncode, _, stderr = run.communicate()
-      if returncode:
-        print(stderr.decode("utf-8"))
 
-  def run(self):
-    root = self.imports.find_root()
-    deps = list(self.imports.sorted_source_files())
-    print("Generating %d targets" % sum(len(x) for x in deps))
-    for files in deps:
-        if len(files) == 1:
-            self.run_pytype(files[0], root)
+    def infer_module_name(self, filename):
+        filename, _ = os.path.splitext(filename)
+        # We want '' in our lookup path, but we don't want it for prefix tests.
+        for path in filter(bool, self.pythonpath):
+            path = os.path.abspath(path)
+            if not path.endswith(os.sep):
+                path += os.sep
+            if filename.startswith(path):
+                filename = filename[len(path):]
+                return (path, filename_to_module_name(filename))
+        # We have not found filename relative to path.
+        return '', filename_to_module_name(filename)
+
+    def run_pytype(self, filename, root, quick=False):
+        path, module_name = self.infer_module_name(filename)
+        target = os.path.relpath(filename, path)
+        out = os.path.join(self.pyi_dir, target + 'i')
+        err = os.path.join(self.pyi_dir, target + '.errors')
+        if quick:
+          print('  %s*' % out)
         else:
-            for f in files:
-                self.run_pytype(f, root, quick=True)
-            for f in files:
-                self.run_pytype(f, root, quick=False)
+          print('  %s' % out)
+        try:
+            os.makedirs(os.path.dirname(out))
+        except:
+            pass
+        pytype_exe = 'pytype'
+        if not can_run('', pytype_exe, '-h'):
+            print('Cannot find pytype in path.')
+            return 0, 0
+
+        run_cmd = [
+            pytype_exe,
+            '-P', self.pyi_dir,
+            '-V', self.args['python_version'],
+            '-o', out,
+            '--module-name', module_name
+        ]
+        if quick:
+            run_cmd += ['--quick', '--no-report-errors']
+        run_cmd = run_cmd + [filename]
+        self.logger.info('Running: ' + ' '.join(run_cmd))
+        run = BinaryRun(run_cmd, env=self.env)
+        returncode, _, stderr = run.communicate()
+        if returncode:
+            print('    errors written to:', err)
+            error = stderr.decode('utf-8')
+            with open(err, 'w') as f:
+                f.write(error)
+            # Log as WARNING since this is not an error in importlab.
+            self.logger.warning(error)
+
+
+    def run(self):
+      root = self.imports.find_root()
+      deps = list(self.imports.sorted_source_files())
+      print('Writing logs to:', self.log_file)
+      print()
+      print('Generating %d targets' % sum(len(x) for x in deps))
+      for files in deps:
+          if len(files) == 1:
+              self.run_pytype(files[0], root)
+          else:
+              for f in files:
+                  self.run_pytype(f, root, quick=True)
+              for f in files:
+                  self.run_pytype(f, root, quick=False)

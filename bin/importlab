@@ -90,7 +90,6 @@ def recursive_import(args, path, typeshed_location):
     for filename in args.filenames:
         imports.add_file_recursive(os.path.abspath(filename))
     imports.build()
-    imports.print_deps_list()
     return imports
 
 
