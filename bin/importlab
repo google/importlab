@@ -41,9 +41,10 @@ def parse_args():
     parser.add_argument("-p", "--pythonpath", dest="pythonpath", action="store",
                         default="",
                         help="PYTHONPATH")
-    parser.add_argument("-T", "--typeshed", dest="typeshed", action="store",
+    parser.add_argument("-T", "--typeshed-location", dest="typeshed_location", action="store",
                         default=None,
-                        help="Location of typeshed.")
+                        help=("Location of typeshed. Will use the TYPESHED_HOME environment "
+                              "variable if this argument is not specified."))
     return parser.parse_args()
 
 
@@ -71,6 +72,19 @@ def make_typeshed_path(typeshed_location, python_version):
             for subdir in subdirs]
 
 
+def get_typeshed_location(args):
+    arg = args.typeshed_location
+    env = os.environ.get('TYPESHED_HOME', None)
+    ret = arg or env or ''
+    if not os.path.isdir(os.path.join(ret, 'stdlib')):
+        print('Cannot find a valid typeshed installation.')
+        print('Searched in:')
+        print('  --typeshed-location argument: ', arg)
+        print('  TYPESHED_HOME environment variable: ', env)
+        sys.exit(0)
+    return ret
+
+
 def recursive_import(args, path, typeshed_location):
     imports = graph.ImportGraph(path, typeshed_location)
     for filename in args.filenames:
@@ -83,8 +97,7 @@ def recursive_import(args, path, typeshed_location):
 def main():
     args = parse_args()
     args.pythonpath = process_pythonpath(args.pythonpath)
-    typeshed_location = args.typeshed or os.path.join(os.path.abspath(
-        os.path.dirname(__file__)), "typeshed")
+    typeshed_location = get_typeshed_location(args)
     python_version = [int(v) for v in args.python_version.split(".")]
     path = [fs.OSFileSystem(path) for path in args.pythonpath.split(os.pathsep)]
     path += make_typeshed_path(typeshed_location, python_version)
@@ -93,6 +106,7 @@ def main():
     runner = pytype.Runner(imports, {
         'python_version': args.python_version,
         'pythonpath': args.pythonpath,
+        'typeshed_location': typeshed_location,
     })
     runner.run()
 

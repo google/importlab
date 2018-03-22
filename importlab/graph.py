@@ -253,7 +253,7 @@ class ImportGraph(object):
     def print_deps_list(self):
         for node, deps in self.deps_list():
             print("source: ", self.format(node))
-            print("deps:")
-            for dep in deps:
-                print("  " + self.format(dep))
-            print()
+            if deps:
+              print("deps:")
+              for dep in deps:
+                  print("  " + self.format(dep))

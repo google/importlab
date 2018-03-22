@@ -57,6 +57,7 @@ class Runner(object):
       self.pythonpath = args['pythonpath'].split(':')
     else:
       self.pythonpath = [imports.find_root()]
+    self.env = {b'TYPESHED_HOME': args['typeshed_location'].encode('utf-8')}
 
 
   def infer_module_name(self, filename):
@@ -97,9 +98,10 @@ class Runner(object):
           '--module-name', module_name
       ]
       if quick:
-          run_cmd += ['--quick']
+          run_cmd += ['--quick', '--no-report-errors']
+      run_cmd = run_cmd + [filename]
       print(" ".join(run_cmd))
-      run = BinaryRun(run_cmd + [filename])
+      run = BinaryRun(run_cmd, env=self.env)
       returncode, _, stderr = run.communicate()
       if returncode:
         print(stderr.decode("utf-8"))
