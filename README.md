@@ -25,13 +25,13 @@ python setup.py install
 ## Usage
 
 ### Prerequisites
-Importlab [pytype](https://github.com/google/pytype) and [typeshed](https://github.com/python/typeshed) to be locally available.
+Importlab requires [pytype](https://github.com/google/pytype) and [typeshed](https://github.com/python/typeshed) to be locally available.
 
 * `pytype`: Needs to be installed and in your executable path. (Note that
   `pytype` depends on Python 2.7, whereas `importlab` depends on Python 3.6,
   making them difficult to install in the same virtualenv.)
 * `typeshed`: Needs to be checked out from git, and pointed to via
-  the `TYPESHED_HOME` environment variable, or via the --typeshed_location
+  the `TYPESHED_HOME` environment variable, or via the `--typeshed_location`
   argument
 
 ### Usage
@@ -97,3 +97,12 @@ or to see all the errors at once,
 ```
 less importlab_output/pytype.log
 ```
+
+## Roadmap
+
+* `Makefile` generation, to take advantage of `make`'s incremental update and
+  parallel execution features
+
+* `libimportlab`, to let other projects use importlab as an internal library
+
+* Integration with other static analysis tools
