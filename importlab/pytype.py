@@ -97,10 +97,6 @@ class Runner(object):
         except:
             pass
         pytype_exe = 'pytype'
-        if not can_run('', pytype_exe, '-h'):
-            print('Cannot find pytype in path.')
-            return 0, 0
-
         run_cmd = [
             pytype_exe,
             '-P', self.pyi_dir,
@@ -113,7 +109,11 @@ class Runner(object):
         run_cmd = run_cmd + [filename]
         self.logger.info('Running: ' + ' '.join(run_cmd))
         run = BinaryRun(run_cmd, env=self.env)
-        returncode, _, stderr = run.communicate()
+        try:
+            returncode, _, stderr = run.communicate()
+        except OSError:
+            self.logger.error('Cannot run pytype.')
+            return
         if returncode:
             print('    errors written to:', err)
             error = stderr.decode('utf-8')

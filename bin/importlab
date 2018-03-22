@@ -85,6 +85,12 @@ def get_typeshed_location(args):
     return ret
 
 
+def check_pytype():
+    if not pytype.can_run('', 'pytype', '-h'):
+        print('Cannot run pytype. Check that it is installed and in your path')
+        sys.exit(0)
+
+
 def recursive_import(args, path, typeshed_location):
     imports = graph.ImportGraph(path, typeshed_location)
     for filename in args.filenames:
@@ -94,13 +100,16 @@ def recursive_import(args, path, typeshed_location):
 
 
 def main():
+    # Set up environment and paths
     args = parse_args()
     args.pythonpath = process_pythonpath(args.pythonpath)
     typeshed_location = get_typeshed_location(args)
+    check_pytype()
     python_version = [int(v) for v in args.python_version.split(".")]
     path = [fs.OSFileSystem(path) for path in args.pythonpath.split(os.pathsep)]
     path += make_typeshed_path(typeshed_location, python_version)
-    #---------------------------------------
+
+    # Run pytype
     imports = recursive_import(args, path, typeshed_location)
     runner = pytype.Runner(imports, {
         'python_version': args.python_version,
