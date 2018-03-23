@@ -236,24 +236,27 @@ class ImportGraph(object):
         if not is_source_node(root):
             return
         seen.add(root)
-        print(" "*indent + self.format(root))
+        print('  '*indent + self.format(root))
         for _, v in self.graph.out_edges([root]):
             self._print_tree(v, seen, indent=indent+2)
 
     def print_tree(self):
-        root = next(nx.topological_sort(self.graph))
         seen = set()
-        self._print_tree(root, seen)
+        for root in nx.topological_sort(self.graph):
+            if not self.graph.in_edges([root]):
+                self._print_tree(root, seen)
 
     def print_topological_sort(self):
         for node in nx.topological_sort(self.graph):
             if is_source_node(node):
                 print(self.format(node))
 
-    def print_deps_list(self):
+    def formatted_deps_list(self):
+        out = []
         for node, deps in self.deps_list():
-            print("source: ", self.format(node))
+            out.append('source: ' + self.format(node))
             if deps:
-              print("deps:")
+              out.append('deps:')
               for dep in deps:
-                  print("  " + self.format(dep))
+                  out.append('  ' + self.format(dep))
+        return '\n'.join(out)

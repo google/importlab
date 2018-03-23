@@ -114,6 +114,12 @@ def main():
 
     # Run pytype
     imports = recursive_import(args, path, typeshed_location)
+
+    if args.tree:
+        print('Source tree:')
+        imports.print_tree()
+        sys.exit(0)
+
     runner = pytype.Runner(imports, {
         'python_version': args.python_version,
         'pythonpath': args.pythonpath,

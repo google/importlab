@@ -131,6 +131,8 @@ class Runner(object):
       print('Writing logs to:', self.log_file)
       print()
       print('Generating %d targets' % sum(len(x) for x in deps))
+      self.logger.info('------------- Starting importlab run. -------------')
+      self.logger.info('source tree:\n' + self.imports.formatted_deps_list())
       for files in deps:
           if len(files) == 1:
               self.run_pytype(files[0], root)
