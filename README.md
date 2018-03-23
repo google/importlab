@@ -19,7 +19,7 @@ Apache 2.0
 ```
 git clone https://github.com/google/importlab.git
 cd importlab
-python setup.py install
+python3 setup.py install
 ```
 
 ## Usage
@@ -40,8 +40,8 @@ Importlab takes one or more python files as arguments, and runs pytype over
 them. Typechecking errors and `.pyi` files are generated in `./importlab_output/`
 
 ```
-importlab [-h] [--tree] [-P PYTHON_VERSION] [-p PYTHONPATH]
-                 [-T TYPESHED_LOCATION]
+usage: importlab [-h] [--tree] [-V PYTHON_VERSION] [-P PYTHONPATH]
+                 [-T TYPESHED_LOCATION] [--quiet]
                  filename [filename ...]
 
 positional arguments:
@@ -50,24 +50,42 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --tree                Display import tree.
-  -P PYTHON_VERSION, --python-version PYTHON_VERSION
+  -V PYTHON_VERSION, --python-version PYTHON_VERSION
                         Python version for the project you"re analyzing
-  -p PYTHONPATH, --pythonpath PYTHONPATH
+  -P PYTHONPATH, --pythonpath PYTHONPATH
                         PYTHONPATH
   -T TYPESHED_LOCATION, --typeshed-location TYPESHED_LOCATION
                         Location of typeshed. Will use the TYPESHED_HOME
                         environment variable if this argument is not
                         specified.
+  --quiet               Don't print errors to stdout.
 ```
 
 ### Example
 
-To check out the `requests` project and run `pytype` over it:
+A complete set of steps to check out the `requests` project and run `pytype` over it:
 
 ```
-$ export TYPESHED_HOME=/path/to/typeshed
+# Install pytype
+$ git clone https://github.com/google/pytype
+$ cd pytype
+$ sudo python2 setup.py install
+$ cd ..
+
+# Install typeshed
+$ git clone https://github.com/python/typeshed
+$ export TYPESHED_HOME=`pwd`/typeshed
+
+# Install importlab
+$ git clone https://github.com/google/importlab.git
+$ cd importlab
+$ sudo python3 setup.py install
+$ cd ..
+
+# Check out and analyze requests
 $ git clone https://github.com/requests/requests
-$ importlab -P 3.6 --pythonpath=./requests requests/requests/*.py
+$ cd requests
+$ importlab -V 2.7 --pythonpath=. requests/*.py
 ```
 
 This will generate the following tree:
@@ -96,6 +114,16 @@ or to see all the errors at once,
 
 ```
 less importlab_output/pytype.log
+```
+
+You will notice a set of import errors for urllib3; this can be fixed by
+checking out the urllib3 source as well, and adding it to --pythonpath.
+
+```
+$ cd ..
+$ git clone https://github.com/shazow/urllib3
+$ cd requests
+$ importlab -V 2.7 --pythonpath=.:../urllib3 requests/*.py
 ```
 
 ## Roadmap

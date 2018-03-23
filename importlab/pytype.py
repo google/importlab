@@ -119,6 +119,8 @@ class Runner(object):
             error = stderr.decode('utf-8')
             with open(err, 'w') as f:
                 f.write(error)
+            if not self.args['quiet']:
+                print(error)
             # Log as WARNING since this is not an error in importlab.
             self.logger.warning(error)
 

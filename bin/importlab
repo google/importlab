@@ -35,16 +35,19 @@ def parse_args():
     parser.add_argument("--tree", dest="tree", action="store_true",
                         default=False,
                         help="Display import tree.")
-    parser.add_argument("-P", "--python-version", dest="python_version", action="store",
+    parser.add_argument("-V", "--python-version", dest="python_version", action="store",
                         default="2.7",
                         help="Python version for the project you\"re analyzing")
-    parser.add_argument("-p", "--pythonpath", dest="pythonpath", action="store",
+    parser.add_argument("-P", "--pythonpath", dest="pythonpath", action="store",
                         default="",
-                        help="PYTHONPATH")
+                        help="PYTHONPATH. Should contain the top-level directory of your project.")
     parser.add_argument("-T", "--typeshed-location", dest="typeshed_location", action="store",
                         default=None,
                         help=("Location of typeshed. Will use the TYPESHED_HOME environment "
                               "variable if this argument is not specified."))
+    parser.add_argument("--quiet", dest="quiet", action="store_true",
+                        default=False,
+                        help="Don't print errors to stdout.")
     return parser.parse_args()
 
 
@@ -115,6 +118,7 @@ def main():
         'python_version': args.python_version,
         'pythonpath': args.pythonpath,
         'typeshed_location': typeshed_location,
+        'quiet': args.quiet
     })
     runner.run()
 
