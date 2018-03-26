@@ -132,8 +132,7 @@ def main():
         'pythonpath': args.pythonpath,
         'typeshed_location': typeshed_location,
         'quiet': args.quiet,
-        'projects': cfg.projects,
-        'deps': cfg.deps,
+        'config': cfg
     })
     runner.run()
 

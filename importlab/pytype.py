@@ -55,12 +55,13 @@ class Runner(object):
     def __init__(self, imports, args):
       self.imports = imports
       self.args = args
+      cfg = args['config']
       if 'pythonpath' in args:
         self.pythonpath = args['pythonpath'].split(':')
       else:
         self.pythonpath = [imports.find_root()]
       self.env = {b'TYPESHED_HOME': args['typeshed_location'].encode('utf-8')}
-      self.output_dir = 'importlab_output'
+      self.output_dir = cfg.output_dir
       self.pyi_dir = os.path.join(self.output_dir, 'pyi')
       try:
           os.makedirs(self.output_dir)
@@ -68,8 +69,8 @@ class Runner(object):
           pass
       self.log_file = os.path.join(self.output_dir, 'pytype.log')
       self.logger = utils.setup_logging('pytype', self.log_file)
-      self.deps = args['deps']
-      self.projects = args['projects']
+      self.deps = cfg.deps
+      self.projects = cfg.projects
 
 
     def infer_module_name(self, filename):

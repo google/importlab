@@ -1,5 +1,6 @@
 """Utility functions."""
 
+from contextlib import contextmanager
 import logging
 import os
 
@@ -16,9 +17,24 @@ def setup_logging(name, log_file, level=logging.INFO):
     return logger
 
 
-def expand_path(path):
-    return os.path.realpath(os.path.expanduser(path))
+@contextmanager
+def cd(path):
+    old = os.getcwd()
+    os.chdir(os.path.expanduser(path))
+    try:
+        yield
+    finally:
+        os.chdir(old)
 
 
-def expand_paths(paths):
-  return [expand_path(x) for x in paths]
+def expand_path(path, cwd=None):
+    expand = lambda path: os.path.realpath(os.path.expanduser(path))
+    if cwd:
+        with cd(cwd):
+            return expand(path)
+    else:
+        return expand(path)
+
+
+def expand_paths(paths, cwd=None):
+    return [expand_path(x, cwd) for x in paths]

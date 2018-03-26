@@ -62,6 +62,45 @@ optional arguments:
                         Write out a dummy configuration file.
 ```
 
+### Config File
+
+Importlab uses a config file to set up per-project input, dependency and output
+directories. The config file is a python file defining configuration variables
+as top-level constants.
+
+Start off by generating a sample config file:
+```
+$ importlab --generate-config my-project.cfg
+```
+
+Now customise each section based on your local setup. Directories may be
+relative to the location of the config file, which is useful if you want to
+check it the config file as part of your project.
+
+Here is an example of a filled in config file for a project with files split
+across two directories, `~/code/foo` and `~/code/bar`, and the config file at
+`~/code/foo/foo.cfg`
+
+```
+# NOTE: All relative paths are relative to the location of this file.
+
+# Dependencies within these directories will be checked for type errors.
+projects = [
+  ".",
+  "~/code/bar"
+]
+
+# Dependencies within these directories will have type inference
+# run on them, but will not be checked for errors.
+deps = [
+  "~/code/some_dependency",
+  "/usr/local/lib/python3.6/dist-packages/project.egg/"
+]
+
+# All importlab output goes here.
+output_dir = "importlab_output"
+```
+
 ### Example
 
 A complete set of steps to check out the `requests` project and run `pytype` over it. We will assume a ~/github toplevel directory in which everything gets checked out:
