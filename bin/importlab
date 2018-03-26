@@ -21,6 +21,7 @@ import collections
 import os
 import sys
 
+from importlab import config
 from importlab import fs
 from importlab import graph
 from importlab import parsepy
@@ -30,35 +31,39 @@ from importlab import resolve
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("filenames", metavar="filename", type=str, nargs="+",
-                        help="input file(s)")
-    parser.add_argument("--tree", dest="tree", action="store_true",
+    parser.add_argument('filenames', metavar='filename', type=str, nargs='*',
+                        help='input file(s)')
+    parser.add_argument('--tree', dest='tree', action='store_true',
                         default=False,
-                        help="Display import tree.")
-    parser.add_argument("-V", "--python-version", dest="python_version", action="store",
-                        default="2.7",
-                        help="Python version for the project you\"re analyzing")
-    parser.add_argument("-P", "--pythonpath", dest="pythonpath", action="store",
-                        default="",
-                        help="PYTHONPATH. Should contain the top-level directory of your project.")
-    parser.add_argument("-T", "--typeshed-location", dest="typeshed_location", action="store",
+                        help='Display import tree.')
+    parser.add_argument('-V', '--python-version', dest='python_version', action='store',
+                        default='3.6',
+                        help='Python version for the project you\'re analyzing')
+    parser.add_argument('-T', '--typeshed-location', dest='typeshed_location', action='store',
                         default=None,
-                        help=("Location of typeshed. Will use the TYPESHED_HOME environment "
-                              "variable if this argument is not specified."))
-    parser.add_argument("--quiet", dest="quiet", action="store_true",
+                        help=('Location of typeshed. Will use the TYPESHED_HOME environment '
+                              'variable if this argument is not specified.'))
+    parser.add_argument('--quiet', dest='quiet', action='store_true',
                         default=False,
                         help="Don't print errors to stdout.")
+    parser.add_argument('--cfg', dest='cfg', type=str, action='store',
+                        default='',
+                        help='Configuration file.')
+    parser.add_argument('--generate-config', dest='generate_config', type=str, action='store',
+                        default='',
+                        help='Write out a dummy configuration file.')
     return parser.parse_args()
 
 
-def process_pythonpath(pythonpath):
+def expand_path(path):
+    return os.path.realpath(os.path.expanduser(path))
+
+
+def get_pythonpath(config):
+    pythonpath = ':'.join(config.projects + config.deps)
     dirs = pythonpath.split(os.pathsep)
-    out = []
-    for d in dirs:
-        d = os.path.expanduser(d)
-        d = os.path.realpath(d)
-        out.append(d)
-    return ":".join(out)
+    out = [expand_path(d) for d in dirs]
+    return ':'.join(out)
 
 
 def make_typeshed_path(typeshed_location, python_version):
@@ -88,6 +93,13 @@ def get_typeshed_location(args):
     return ret
 
 
+def read_cfg_file(args):
+    ret = config.Config()
+    if args.cfg:
+        ret.read_from_file(args.cfg)
+    return ret
+
+
 def check_pytype():
     if not pytype.can_run('', 'pytype', '-h'):
         print('Cannot run pytype. Check that it is installed and in your path')
@@ -105,10 +117,16 @@ def recursive_import(args, path, typeshed_location):
 def main():
     # Set up environment and paths
     args = parse_args()
-    args.pythonpath = process_pythonpath(args.pythonpath)
+
+    if args.generate_config:
+        config.generate_default(args.generate_config)
+        sys.exit(0)
+
+    cfg = read_cfg_file(args)
+    args.pythonpath = get_pythonpath(cfg)
     typeshed_location = get_typeshed_location(args)
     check_pytype()
-    python_version = [int(v) for v in args.python_version.split(".")]
+    python_version = [int(v) for v in args.python_version.split('.')]
     path = [fs.OSFileSystem(path) for path in args.pythonpath.split(os.pathsep)]
     path += make_typeshed_path(typeshed_location, python_version)
 

@@ -40,9 +40,9 @@ Importlab takes one or more python files as arguments, and runs pytype over
 them. Typechecking errors and `.pyi` files are generated in `./importlab_output/`
 
 ```
-usage: importlab [-h] [--tree] [-V PYTHON_VERSION] [-P PYTHONPATH]
-                 [-T TYPESHED_LOCATION] [--quiet]
-                 filename [filename ...]
+usage: importlab [-h] [--tree] [-V PYTHON_VERSION] [-T TYPESHED_LOCATION]
+                 [--quiet] [--cfg CFG] [--generate-config GENERATE_CONFIG]
+                 [filename [filename ...]]
 
 positional arguments:
   filename              input file(s)
@@ -51,22 +51,24 @@ optional arguments:
   -h, --help            show this help message and exit
   --tree                Display import tree.
   -V PYTHON_VERSION, --python-version PYTHON_VERSION
-                        Python version for the project you"re analyzing
-  -P PYTHONPATH, --pythonpath PYTHONPATH
-                        PYTHONPATH
+                        Python version for the project you're analyzing
   -T TYPESHED_LOCATION, --typeshed-location TYPESHED_LOCATION
                         Location of typeshed. Will use the TYPESHED_HOME
                         environment variable if this argument is not
                         specified.
   --quiet               Don't print errors to stdout.
+  --cfg CFG             Configuration file.
+  --generate-config GENERATE_CONFIG
+                        Write out a dummy configuration file.
 ```
 
 ### Example
 
-A complete set of steps to check out the `requests` project and run `pytype` over it:
+A complete set of steps to check out the `requests` project and run `pytype` over it. We will assume a ~/github toplevel directory in which everything gets checked out:
 
 ```
 # Install pytype
+$ cd ~/github
 $ git clone https://github.com/google/pytype
 $ cd pytype
 $ sudo python2 setup.py install
@@ -85,7 +87,22 @@ $ cd ..
 # Check out and analyze requests
 $ git clone https://github.com/requests/requests
 $ cd requests
-$ importlab -V 2.7 --pythonpath=. requests/*.py
+# Generate a config file
+$ importlab --generate-config requests.conf
+# and edit it to point to your toplevel directory
+$ cat requests.conf
+
+  # Dependencies within these directories will be checked for type errors.
+  projects = [
+    "."  # "~/github/requests" would work too
+  ]
+
+  # Dependencies within these directories will have type inference
+  # run on them, but will not be checked for errors.
+  deps = [
+  ]
+
+$ importlab -V 2.7 --cfg=requests.conf requests/*.py
 ```
 
 This will generate the following tree:
@@ -117,13 +134,30 @@ less importlab_output/pytype.log
 ```
 
 You will notice a set of import errors for urllib3; this can be fixed by
-checking out the urllib3 source as well, and adding it to --pythonpath.
+checking out the urllib3 source as well, and adding it to your config file.
+Since we are analysing `requests`, and not `urllib3`, we add it to `deps` rather
+than `projects`:
 
 ```
 $ cd ..
 $ git clone https://github.com/shazow/urllib3
 $ cd requests
-$ importlab -V 2.7 --pythonpath=.:../urllib3 requests/*.py
+
+# edit file
+$ cat requests.conf
+  # Dependencies within these directories will be checked for type errors.
+  projects = [
+    "."
+  ]
+
+  # Dependencies within these directories will have type inference
+  # run on them, but will not be checked for errors.
+  deps = [
+    "~/github/urllib3"
+  ]
+
+# run importlab again
+$ importlab -V 2.7 --cfg=requests.conf requests/*.py
 ```
 
 ## Roadmap
