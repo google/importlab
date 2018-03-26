@@ -1,6 +1,8 @@
 """Utility functions."""
 
 import logging
+import os
+
 
 def setup_logging(name, log_file, level=logging.INFO):
     formatter = logging.Formatter(
@@ -12,3 +14,11 @@ def setup_logging(name, log_file, level=logging.INFO):
     logger.setLevel(level)
     logger.addHandler(handler)
     return logger
+
+
+def expand_path(path):
+    return os.path.realpath(os.path.expanduser(path))
+
+
+def expand_paths(paths):
+  return [expand_path(x) for x in paths]

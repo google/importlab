@@ -68,6 +68,8 @@ class Runner(object):
           pass
       self.log_file = os.path.join(self.output_dir, 'pytype.log')
       self.logger = utils.setup_logging('pytype', self.log_file)
+      self.deps = args['deps']
+      self.projects = args['projects']
 
 
     def infer_module_name(self, filename):
@@ -83,12 +85,16 @@ class Runner(object):
         # We have not found filename relative to path.
         return '', filename_to_module_name(filename)
 
-    def run_pytype(self, filename, root, quick=False):
+    def run_pytype(self, filename, root, report_errors=True):
         path, module_name = self.infer_module_name(filename)
         target = os.path.relpath(filename, path)
         out = os.path.join(self.pyi_dir, target + 'i')
         err = os.path.join(self.pyi_dir, target + '.errors')
-        if quick:
+        in_projects = any(path.startswith(d) for d in self.projects)
+        in_deps = any(path.startswith(d) for d in self.deps)
+        if in_deps and not in_projects:
+            report_errors = False
+        if not report_errors:
           print('  %s*' % out)
         else:
           print('  %s' % out)
@@ -102,10 +108,11 @@ class Runner(object):
             '-P', self.pyi_dir,
             '-V', self.args['python_version'],
             '-o', out,
+            '--quick',
             '--module-name', module_name
         ]
-        if quick:
-            run_cmd += ['--quick', '--no-report-errors']
+        if not report_errors:
+            run_cmd += ['--no-report-errors']
         run_cmd = run_cmd + [filename]
         self.logger.info('Running: ' + ' '.join(run_cmd))
         run = BinaryRun(run_cmd, env=self.env)
@@ -138,6 +145,6 @@ class Runner(object):
               self.run_pytype(files[0], root)
           else:
               for f in files:
-                  self.run_pytype(f, root, quick=True)
+                  self.run_pytype(f, root, report_errors=False)
               for f in files:
-                  self.run_pytype(f, root, quick=False)
+                  self.run_pytype(f, root, report_errors=True)

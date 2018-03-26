@@ -55,17 +55,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def expand_path(path):
-    return os.path.realpath(os.path.expanduser(path))
-
-
-def get_pythonpath(config):
-    pythonpath = ':'.join(config.projects + config.deps)
-    dirs = pythonpath.split(os.pathsep)
-    out = [expand_path(d) for d in dirs]
-    return ':'.join(out)
-
-
 def make_typeshed_path(typeshed_location, python_version):
     """Get the names of all modules in typeshed and pytype/pytd/builtins."""
     major = python_version[0]
@@ -123,7 +112,7 @@ def main():
         sys.exit(0)
 
     cfg = read_cfg_file(args)
-    args.pythonpath = get_pythonpath(cfg)
+    args.pythonpath = cfg.make_pythonpath()
     typeshed_location = get_typeshed_location(args)
     check_pytype()
     python_version = [int(v) for v in args.python_version.split('.')]
@@ -142,7 +131,9 @@ def main():
         'python_version': args.python_version,
         'pythonpath': args.pythonpath,
         'typeshed_location': typeshed_location,
-        'quiet': args.quiet
+        'quiet': args.quiet,
+        'projects': cfg.projects,
+        'deps': cfg.deps,
     })
     runner.run()
 

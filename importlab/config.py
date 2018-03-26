@@ -4,6 +4,9 @@ import os
 import sys
 import textwrap
 
+from . import utils
+
+
 class Config(object):
     def __init__(self):
         self.projects = None
@@ -13,8 +16,11 @@ class Config(object):
         mod = imp.load_source('config_file', path)
         consts = {k: v for k, v in mod.__dict__.items()
                   if not k.startswith('__')}
-        self.projects = consts['projects']
-        self.deps = consts['deps']
+        self.projects = utils.expand_paths(consts['projects'])
+        self.deps = utils.expand_paths(consts['deps'])
+
+    def make_pythonpath(self):
+        return ':'.join(self.projects + self.deps)
 
 
 DUMMY_CONFIG = '''
