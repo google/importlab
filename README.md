@@ -75,9 +75,9 @@ $ importlab --generate-config my-project.cfg
 
 Now customise each section based on your local setup. Directories may be
 relative to the location of the config file, which is useful if you want to
-check it the config file as part of your project.
+check in the config file as part of your project.
 
-Here is an example of a filled in config file for a project with files split
+Here is an example of a filled-in config file for a project with files split
 across two directories, `~/code/foo` and `~/code/bar`, and the config file at
 `~/code/foo/foo.cfg`
 

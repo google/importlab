@@ -43,7 +43,6 @@ setup(
     description=DESCRIPTION,
     long_description=long_description,
     maintainer=AUTHOR,
-    maintainer_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
     packages=PACKAGES,
