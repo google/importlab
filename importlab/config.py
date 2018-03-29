@@ -27,6 +27,7 @@ class Config(object):
             sys.exit(0)
 
     def read_from_file(self, path):
+        path = utils.expand_path(path)
         mod = imp.load_source('config_file', path)
         consts = {k: v for k, v in mod.__dict__.items()
                   if not k.startswith('__')}
