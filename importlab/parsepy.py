@@ -317,8 +317,8 @@ def scan_file(filename):
     return Module(fi.read()).get_imports()
 
 
-def get_imports(filename, version):
-  if version == 3:
+def get_imports(filename, major_version):
+  if major_version == 3:
     # Use ast to parse the file.
     return [ImportStatement(*imp)
             for imp in import_finder.get_imports(filename)]

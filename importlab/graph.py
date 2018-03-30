@@ -82,21 +82,19 @@ class ImportGraph(object):
     thereafter.
     """
 
-    def __init__(self, args): # path, typeshed_location, pythonpath):
-        self.path = args['path']
-        self.pythonpath = args['pythonpath']
-        self.typeshed_location = args['typeshed_location']
-        self.python_version = args['python_version']
+    def __init__(self, env):
+        self.env = env
+        self.major_version = env.python_version[0]
         self.broken_deps = collections.defaultdict(set)
         self.graph = nx.DiGraph()
         self.root = None
         self.final = False
 
     def get_file_deps(self, filename):
-        r = resolve.Resolver(self.path, filename)
+        r = resolve.Resolver(self.env.path, filename)
         resolved = []
         unresolved = []
-        for imp in parsepy.get_imports(filename, self.python_version[0]):
+        for imp in parsepy.get_imports(filename, self.major_version):
             try:
                 f = r.resolve_import(imp)
                 if not f.endswith(".so"):
@@ -165,8 +163,8 @@ class ImportGraph(object):
         prefix = self.find_root()
         if isinstance(node, (Cycle, NodeSet)):
             return node.pp()
-        elif node.startswith(self.typeshed_location):
-            return "[%s]" % os.path.relpath(node, self.typeshed_location)
+        elif node.startswith(self.env.typeshed_location):
+            return "[%s]" % os.path.relpath(node, self.env.typeshed_location)
         else:
             return os.path.relpath(node, prefix)
 

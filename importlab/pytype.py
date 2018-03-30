@@ -13,16 +13,16 @@ def filename_to_module_name(filename):
 
 
 class Runner(object):
-    def __init__(self, imports, args):
+    def __init__(self, imports, env):
       self.imports = imports
-      self.args = args
-      cfg = args['config']
-      if 'pythonpath' in args:
-        self.pythonpath = args['pythonpath'].split(':')
-      else:
-        self.pythonpath = [imports.find_root()]
-      self.env = {b'TYPESHED_HOME': args['typeshed_location'].encode('utf-8')}
+      self.env = env
+      cfg = env.config
       self.output_dir = cfg.output_dir
+      self.deps = cfg.deps
+      self.projects = cfg.projects
+      self.system_env = {
+          b'TYPESHED_HOME': env.typeshed_location.encode('utf-8')
+      }
       self.pyi_dir = os.path.join(self.output_dir, 'pyi')
       try:
           os.makedirs(self.output_dir)
@@ -30,14 +30,12 @@ class Runner(object):
           pass
       self.log_file = os.path.join(self.output_dir, 'pytype.log')
       self.logger = utils.setup_logging('pytype', self.log_file)
-      self.deps = cfg.deps
-      self.projects = cfg.projects
 
 
     def infer_module_name(self, filename):
         filename, _ = os.path.splitext(filename)
         # We want '' in our lookup path, but we don't want it for prefix tests.
-        for path in filter(bool, self.pythonpath):
+        for path in filter(bool, self.env.pythonpath):
             path = os.path.abspath(path)
             if not path.endswith(os.sep):
                 path += os.sep
@@ -68,7 +66,7 @@ class Runner(object):
         run_cmd = [
             pytype_exe,
             '-P', self.pyi_dir,
-            '-V', self.args['python_version'],
+            '-V', self.env.python_version_string,
             '-o', out,
             '--quick',
             '--module-name', module_name
@@ -77,7 +75,7 @@ class Runner(object):
             run_cmd += ['--no-report-errors']
         run_cmd = run_cmd + [filename]
         self.logger.info('Running: ' + ' '.join(run_cmd))
-        run = runner.BinaryRun(run_cmd, env=self.env)
+        run = runner.BinaryRun(run_cmd, env=self.system_env)
         try:
             returncode, _, stderr = run.communicate()
         except OSError:
@@ -88,7 +86,7 @@ class Runner(object):
             error = stderr.decode('utf-8')
             with open(err, 'w') as f:
                 f.write(error)
-            if not self.args['quiet']:
+            if not self.env.args.quiet:
                 print(error)
             # Log as WARNING since this is not an error in importlab.
             self.logger.warning(error)
