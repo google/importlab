@@ -1,48 +1,9 @@
 """Pytype integration."""
 
 import os
-import re
-import subprocess
-import sys
 
+from . import runner
 from . import utils
-
-class BinaryRun(object):
-    def __init__(self, args, dry_run=False, env=None):
-        self.args = args
-        self.results = None
-
-        if dry_run:
-            self.results = (0, '', '')
-        else:
-            if env is not None:
-                full_env = os.environ.copy()
-                full_env.update(env)
-            else:
-                full_env = None
-            self.proc = subprocess.Popen(
-                self.args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env=full_env)
-
-    def communicate(self):
-        if self.results:
-            return self.results
-
-        stdout, stderr = self.proc.communicate()
-        self.results = self.proc.returncode, stdout, stderr
-        return self.results
-
-
-def can_run(path, exe, *args):
-    exe = os.path.join(path, exe)
-    try:
-        BinaryRun([exe] + list(args)).communicate()
-        return True
-    except OSError:
-        return False
-
 
 def filename_to_module_name(filename):
     if os.path.dirname(filename).startswith(os.pardir):
@@ -116,7 +77,7 @@ class Runner(object):
             run_cmd += ['--no-report-errors']
         run_cmd = run_cmd + [filename]
         self.logger.info('Running: ' + ' '.join(run_cmd))
-        run = BinaryRun(run_cmd, env=self.env)
+        run = runner.BinaryRun(run_cmd, env=self.env)
         try:
             returncode, _, stderr = run.communicate()
         except OSError:

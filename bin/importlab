@@ -17,16 +17,14 @@
 """main entry point."""
 
 import argparse
-import collections
 import os
 import sys
 
 from importlab import config
+from importlab import env
 from importlab import fs
 from importlab import graph
-from importlab import parsepy
 from importlab import pytype
-from importlab import resolve
 
 
 def parse_args():
@@ -69,19 +67,6 @@ def make_typeshed_path(typeshed_location, python_version):
             for subdir in subdirs]
 
 
-def get_typeshed_location(args):
-    arg = args.typeshed_location
-    env = os.environ.get('TYPESHED_HOME', None)
-    ret = arg or env or ''
-    if not os.path.isdir(os.path.join(ret, 'stdlib')):
-        print('Cannot find a valid typeshed installation.')
-        print('Searched in:')
-        print('  --typeshed-location argument: ', arg)
-        print('  TYPESHED_HOME environment variable: ', env)
-        sys.exit(0)
-    return ret
-
-
 def read_cfg_file(args):
     ret = config.Config()
     if args.cfg:
@@ -89,18 +74,17 @@ def read_cfg_file(args):
     return ret
 
 
-def check_pytype():
-    if not pytype.can_run('', 'pytype', '-h'):
-        print('Cannot run pytype. Check that it is installed and in your path')
-        sys.exit(0)
-
-
-def recursive_import(args, path, typeshed_location):
-    imports = graph.ImportGraph(path, typeshed_location)
+def recursive_import(args, python_version, path, typeshed_location):
+    import_graph = graph.ImportGraph({
+            'path': path,
+            'typeshed_location': typeshed_location,
+            'pythonpath': args.pythonpath,
+            'python_version': python_version
+    })
     for filename in args.filenames:
-        imports.add_file_recursive(os.path.abspath(filename))
-    imports.build()
-    return imports
+        import_graph.add_file_recursive(os.path.abspath(filename))
+    import_graph.build()
+    return import_graph
 
 
 def main():
@@ -113,28 +97,29 @@ def main():
 
     cfg = read_cfg_file(args)
     args.pythonpath = cfg.make_pythonpath()
-    typeshed_location = get_typeshed_location(args)
-    check_pytype()
+    typeshed_location = env.get_typeshed_location(args)
+    env.check_pytype()
+    env.check_python_exe(args)
     python_version = [int(v) for v in args.python_version.split('.')]
     path = [fs.OSFileSystem(path) for path in args.pythonpath.split(os.pathsep)]
     path += make_typeshed_path(typeshed_location, python_version)
 
     # Run pytype
-    imports = recursive_import(args, path, typeshed_location)
+    imports = recursive_import(args, python_version, path, typeshed_location)
 
     if args.tree:
         print('Source tree:')
         imports.print_tree()
         sys.exit(0)
 
-    runner = pytype.Runner(imports, {
+    pytype_runner = pytype.Runner(imports, {
         'python_version': args.python_version,
         'pythonpath': args.pythonpath,
         'typeshed_location': typeshed_location,
         'quiet': args.quiet,
         'config': cfg
     })
-    runner.run()
+    pytype_runner.run()
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import networkx as nx
 
 from . import resolve
 from . import parsepy
+from . import import_finder
 
 
 class Cycle(object):
@@ -81,9 +82,11 @@ class ImportGraph(object):
     thereafter.
     """
 
-    def __init__(self, path, typeshed_location):
-        self.path = path
-        self.typeshed_location = typeshed_location
+    def __init__(self, args): # path, typeshed_location, pythonpath):
+        self.path = args['path']
+        self.pythonpath = args['pythonpath']
+        self.typeshed_location = args['typeshed_location']
+        self.python_version = args['python_version']
         self.broken_deps = collections.defaultdict(set)
         self.graph = nx.DiGraph()
         self.root = None
@@ -93,7 +96,7 @@ class ImportGraph(object):
         r = resolve.Resolver(self.path, filename)
         resolved = []
         unresolved = []
-        for imp in parsepy.scan_file(filename):
+        for imp in parsepy.get_imports(filename, self.python_version[0]):
             try:
                 f = r.resolve_import(imp)
                 if not f.endswith(".so"):

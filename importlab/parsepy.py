@@ -14,6 +14,7 @@
 
 """Logic for resolving import paths."""
 
+import ast
 import collections
 import io
 
@@ -25,6 +26,8 @@ from lib2to3.pgen2 import parse as parse2to3
 from lib2to3.pgen2 import token
 from lib2to3.pgen2 import tokenize as tokenize2to3
 from lib2to3.pygram import python_symbols
+
+from . import import_finder
 
 
 class ParseError(Exception):
@@ -288,13 +291,13 @@ class Module(object):
     try:
       return Parser().parse_string(self.src)
     except parse2to3.ParseError as e:
-      raise ParseError(e.message)
+      raise ParseError(e.msg)
     except tokenize2to3.TokenError as e:
-      raise ParseError(e.message)
+      raise ParseError(e.msg)
     except UnicodeDecodeError as e:
-      raise ParseError(e.message)
+      raise ParseError(e.msg)
     except IndentationError as e:
-      raise ParseError(e.message)
+      raise ParseError(e.msg)
 
   def get_imports(self):
     ast = self.to_ast()
@@ -312,3 +315,13 @@ def scan_string(src):
 def scan_file(filename):
   with open(filename, "rb") as fi:
     return Module(fi.read()).get_imports()
+
+
+def get_imports(filename, version):
+  if version == 3:
+    # Use ast to parse the file.
+    return [ImportStatement(*imp)
+            for imp in import_finder.get_imports(filename)]
+  else:
+    # Use lib2to3 to parse the file.
+    return scan_file(filename)
