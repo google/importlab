@@ -17,6 +17,7 @@ class Runner(object):
       self.imports = imports
       self.env = env
       cfg = env.config
+      self.pythonpath = self.env.pythonpath.split(':')
       self.output_dir = cfg.output_dir
       self.deps = cfg.deps
       self.projects = cfg.projects
@@ -35,7 +36,7 @@ class Runner(object):
     def infer_module_name(self, filename):
         filename, _ = os.path.splitext(filename)
         # We want '' in our lookup path, but we don't want it for prefix tests.
-        for path in filter(bool, self.env.pythonpath):
+        for path in filter(bool, self.pythonpath):
             path = os.path.abspath(path)
             if not path.endswith(os.sep):
                 path += os.sep
