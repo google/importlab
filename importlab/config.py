@@ -5,15 +5,21 @@ import textwrap
 
 from . import utils
 
+DEFAULT = {
+    'projects': [],
+    'deps': [],
+    'output_dir': 'importlab_output',
+    'python_version': '3.6'
+}
+
 
 class Config(object):
     def __init__(self):
-        self.projects = None
-        self.deps = None
-        self.output_dir = 'importlab_output'
+        for k, v in DEFAULT.items():
+            setattr(self, k, v)
 
     def _validate_keys(self, consts):
-        valid = {'projects', 'deps', 'output_dir'}
+        valid = set(DEFAULT.keys())
         invalid = set(consts.keys()) - valid
         if invalid:
             err = '''
@@ -32,21 +38,26 @@ class Config(object):
         consts = {k: v for k, v in mod.__dict__.items()
                   if not k.startswith('__')}
         self._validate_keys(consts)
-        projects = consts.get('projects', [])
-        deps = consts.get('deps', [])
-        output_dir = consts.get('output_dir', None)
-        cwd = os.path.dirname(utils.expand_path(path))
-        self.projects = utils.expand_paths(projects, cwd)
-        self.deps = utils.expand_paths(deps, cwd)
-        if output_dir:
-            self.output_dir = utils.expand_path(output_dir, cwd)
+        for k in DEFAULT.keys():
+            setattr(self, k, consts.get(k, DEFAULT[k]))
+        cwd = os.path.dirname(path)
+        self.projects = utils.expand_paths(self.projects, cwd)
+        self.deps = utils.expand_paths(self.deps, cwd)
+        self.output_dir = utils.expand_path(self.output_dir, cwd)
 
     def make_pythonpath(self):
         return ':'.join(self.projects + self.deps)
 
+    def show(self):
+        for k in DEFAULT.keys():
+            print('%s = %r' % (k, getattr(self, k)))
+
 
 DUMMY_CONFIG = '''
     # NOTE: All relative paths are relative to the location of this file.
+
+    # Python version (major.minor)
+    python_version = 3.6
 
     # Dependencies within these directories will be checked for type errors.
     projects = [

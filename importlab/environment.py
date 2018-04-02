@@ -61,7 +61,7 @@ class Environment(object):
         self.args = args
         self.config = config
         self.typeshed_location = get_typeshed_location(self.args)
-        self.python_version_string = args.python_version
+        self.python_version_string = config.python_version
         self.pythonpath = config.make_pythonpath()
         self.python_version = split_version(self.python_version_string)
         self.path = self._make_path()

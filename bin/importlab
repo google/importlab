@@ -34,9 +34,6 @@ def parse_args():
     parser.add_argument('--tree', dest='tree', action='store_true',
                         default=False,
                         help='Display import tree.')
-    parser.add_argument('-V', '--python-version', dest='python_version', action='store',
-                        default='3.6',
-                        help='Python version for the project you\'re analyzing')
     parser.add_argument('-T', '--typeshed-location', dest='typeshed_location', action='store',
                         default=None,
                         help=('Location of typeshed. Will use the TYPESHED_HOME environment '
@@ -77,6 +74,8 @@ def main():
         sys.exit(0)
 
     cfg = read_cfg_file(args)
+    print('Configuration:')
+    cfg.show()
     env = environment.Environment(args, cfg)
     environment.check_pytype()
     environment.check_python_exe(env.python_version_string)

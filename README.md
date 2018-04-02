@@ -50,8 +50,6 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --tree                Display import tree.
-  -V PYTHON_VERSION, --python-version PYTHON_VERSION
-                        Python version for the project you're analyzing
   -T TYPESHED_LOCATION, --typeshed-location TYPESHED_LOCATION
                         Location of typeshed. Will use the TYPESHED_HOME
                         environment variable if this argument is not
@@ -83,6 +81,9 @@ across two directories, `~/code/foo` and `~/code/bar`, and the config file at
 
 ```
 # NOTE: All relative paths are relative to the location of this file.
+
+# Python version (major.minor)
+python_version = 3.6
 
 # Dependencies within these directories will be checked for type errors.
 projects = [
@@ -130,6 +131,8 @@ $ cd requests
 $ importlab --generate-config requests.conf
 # and edit it to point to your toplevel directory
 $ cat requests.conf
+  # Python version (major.minor)
+  python_version = 2.7
 
   # Dependencies within these directories will be checked for type errors.
   projects = [
@@ -141,7 +144,7 @@ $ cat requests.conf
   deps = [
   ]
 
-$ importlab -V 2.7 --cfg=requests.conf requests/*.py
+$ importlab --cfg=requests.conf requests/*.py
 ```
 
 This will generate the following tree:
