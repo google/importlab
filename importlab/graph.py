@@ -231,6 +231,14 @@ class ImportGraph(object):
                 out.append((node, deps))
         return out
 
+    def get_all_unresolved(self):
+        """Returns a set of all unresolved imports."""
+        assert self.final, "Call build() before using the graph."
+        out = set()
+        for v in self.broken_deps.values():
+            out |= v
+        return out
+
     def _print_tree(self, root, seen, indent=0):
         if root in seen:
             return

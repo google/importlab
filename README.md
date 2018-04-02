@@ -177,6 +177,13 @@ less importlab_output/pytype.log
 
 You will notice a set of import errors for urllib3; this can be fixed by
 checking out the urllib3 source as well, and adding it to your config file.
+
+Note that you could also have discovered this by running importlab's broken
+dependency checker:
+```
+$ importlab --cfg=requests.conf requests/*.py --unresolved
+```
+
 Since we are analysing `requests`, and not `urllib3`, we add it to `deps` rather
 than `projects`:
 
@@ -199,7 +206,7 @@ $ cat requests.conf
   ]
 
 # run importlab again
-$ importlab -V 2.7 --cfg=requests.conf requests/*.py
+$ importlab --cfg=requests.conf requests/*.py
 ```
 
 ## Roadmap

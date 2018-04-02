@@ -34,6 +34,9 @@ def parse_args():
     parser.add_argument('--tree', dest='tree', action='store_true',
                         default=False,
                         help='Display import tree.')
+    parser.add_argument('--unresolved', dest='unresolved', action='store_true',
+                        default=False,
+                        help='Display unresolved dependencies.')
     parser.add_argument('-T', '--typeshed-location', dest='typeshed_location', action='store',
                         default=None,
                         help=('Location of typeshed. Will use the TYPESHED_HOME environment '
@@ -76,6 +79,8 @@ def main():
     cfg = read_cfg_file(args)
     print('Configuration:')
     cfg.show()
+    print()
+
     env = environment.Environment(args, cfg)
     environment.check_pytype()
     environment.check_python_exe(env.python_version_string)
@@ -86,6 +91,12 @@ def main():
     if args.tree:
         print('Source tree:')
         imports.print_tree()
+        sys.exit(0)
+
+    if args.unresolved:
+        print('Unresolved dependencies:')
+        for imp in sorted(imports.get_all_unresolved()):
+            print(' ', imp.name)
         sys.exit(0)
 
     pytype_runner = pytype.Runner(imports, env)
