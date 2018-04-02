@@ -84,7 +84,7 @@ across two directories, `~/code/foo` and `~/code/bar`, and the config file at
 # NOTE: All relative paths are relative to the location of this file.
 
 # Python version (major.minor)
-python_version = 3.6
+python_version = '3.6'
 
 # Dependencies within these directories will be checked for type errors.
 projects = [

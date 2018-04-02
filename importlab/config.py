@@ -56,8 +56,8 @@ class Config(object):
 DUMMY_CONFIG = '''
     # NOTE: All relative paths are relative to the location of this file.
 
-    # Python version (major.minor)
-    python_version = 3.6
+    # Python version ('major.minor')
+    python_version = '3.6'
 
     # Dependencies within these directories will be checked for type errors.
     projects = [
