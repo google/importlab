@@ -40,8 +40,8 @@ Importlab takes one or more python files as arguments, and runs pytype over
 them. Typechecking errors and `.pyi` files are generated in `./importlab_output/`
 
 ```
-usage: importlab [-h] [--tree] [-V PYTHON_VERSION] [-T TYPESHED_LOCATION]
-                 [--quiet] [--cfg CFG] [--generate-config GENERATE_CONFIG]
+usage: importlab [-h] [--tree] [--unresolved] [-T TYPESHED_LOCATION] [--quiet]
+                 [--cfg CFG] [--generate-config GENERATE_CONFIG]
                  [filename [filename ...]]
 
 positional arguments:
@@ -50,6 +50,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --tree                Display import tree.
+  --unresolved          Display unresolved dependencies.
   -T TYPESHED_LOCATION, --typeshed-location TYPESHED_LOCATION
                         Location of typeshed. Will use the TYPESHED_HOME
                         environment variable if this argument is not
