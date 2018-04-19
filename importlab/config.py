@@ -14,6 +14,8 @@ DEFAULT = {
 
 
 class Config(object):
+    __slots__ = 'projects', 'deps', 'output_dir', 'python_version'
+
     def __init__(self):
         for k, v in DEFAULT.items():
             setattr(self, k, v)

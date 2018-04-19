@@ -30,10 +30,6 @@ from lib2to3.pygram import python_symbols
 from . import import_finder
 
 
-class ParseError(Exception):
-  pass
-
-
 class ImportStatement(collections.namedtuple(
     "ImportStatement", ["name", "new_name", "is_from", "everything"])):
   """A Python import statement, such as "import foo as bar"."""
@@ -288,16 +284,7 @@ class Module(object):
 
   def to_ast(self):
     """Parse this module and return the AST."""
-    try:
-      return Parser().parse_string(self.src)
-    except parse2to3.ParseError as e:
-      raise ParseError(e.msg)
-    except tokenize2to3.TokenError as e:
-      raise ParseError(e.msg)
-    except UnicodeDecodeError as e:
-      raise ParseError(e.msg)
-    except IndentationError as e:
-      raise ParseError(e.msg)
+    return Parser().parse_string(self.src)
 
   def get_imports(self):
     ast = self.to_ast()

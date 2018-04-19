@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for parsepy.py."""
+"""Tests for parsepy.py under python2.7.
+
+Run as
+$ python2.7 -m importlab.parsepy_test
+"""
 
 import textwrap
 import unittest
