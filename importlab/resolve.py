@@ -50,6 +50,15 @@ class Resolver:
             prefix = ""
         return prefix + os.path.join(*remainder.split("."))
 
+    def _find_file(self, fs, name):
+        init = os.path.join(name, "__init__.py")
+        py = name + ".py"
+        for x in [init, py]:
+            if fs.isfile(x):
+                return fs.refer_to(x)
+        return None
+
+
     def resolve_import(self, item):
         """Simulate how Python resolves imports.
 
@@ -67,37 +76,26 @@ class Resolver:
             ImportException: If the module doesn't exist.
         """
         name = item.name
-        basename = self.convert_to_path(name)
-        shortened = None
-        if item.is_from:
-            shortened = os.path.dirname(basename)
 
         # Python builtin modules
         if name in sys.builtin_module_names or name.startswith("__future__"):
             return name + ".so"
 
+        filename = self.convert_to_path(name)
         if item.is_relative():
-            filename = os.path.join(self.current_directory, basename)
-        else:
-            filename = basename
+            filename = os.path.join(self.current_directory, filename)
 
-        # try absolute files
-        init_file = os.path.join(filename, "__init__.py")
+        # The last part in `from a.b.c import d` might be a symbol rather than a
+        # module, so we try both a/b/c/d.py and a/b/c.py
+        short_name = None
+        if item.is_from:
+            short_name = os.path.dirname(filename)
+
         for fs in self.fs_path:
-          if fs.isfile(init_file):
-              return fs.refer_to(init_file)
-          elif fs.isfile(filename + ".py"):
-              return fs.refer_to(filename + ".py")
-          elif shortened is not None:
-              if item.is_relative():
-                  filename = os.path.join(self.current_directory, shortened)
-              else:
-                  filename = shortened
-              init_file = os.path.join(filename, "__init__.py")
-              if fs.isdir(filename) and fs.isfile(init_file):
-                  return fs.refer_to(init_file)
-              elif fs.isfile(filename + ".py"):
-                  return fs.refer_to(filename + ".py")
+            f = (self._find_file(fs, filename) or
+                 (short_name and self._find_file(fs, short_name)))
+            if f:
+                return f
 
         raise ImportException(name)
 
@@ -123,4 +121,3 @@ def show_import_tree(self, seen=None, indent=0):
         except ImportException as err:
             # mark import we didn't find with '!'
             print(" "*(indent*4) + "!" + str(imported))
-
