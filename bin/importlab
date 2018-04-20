@@ -82,8 +82,6 @@ def main():
     print()
 
     env = environment.Environment(args, cfg)
-    environment.check_pytype()
-    environment.check_python_exe(env.python_version_string)
 
     # Run pytype
     imports = recursive_import(args, env)

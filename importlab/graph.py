@@ -163,8 +163,8 @@ class ImportGraph(object):
         prefix = self.find_root()
         if isinstance(node, (Cycle, NodeSet)):
             return node.pp()
-        elif node.startswith(self.env.typeshed_location):
-            return "[%s]" % os.path.relpath(node, self.env.typeshed_location)
+        elif node.startswith(self.env.typeshed.root):
+            return "[%s]" % os.path.relpath(node, self.env.typeshed.root)
         else:
             return os.path.relpath(node, prefix)
 
@@ -215,7 +215,7 @@ class ImportGraph(object):
                 # add a one-element list for uniformity
                 out.append([node])
             else:
-                # We don't care about pyi deps
+                # We don't care about other deps
                 pass
         return reversed(out)
 

@@ -22,7 +22,7 @@ class Runner(object):
       self.deps = cfg.deps
       self.projects = cfg.projects
       self.system_env = {
-          b'TYPESHED_HOME': env.typeshed_location.encode('utf-8')
+          b'TYPESHED_HOME': env.typeshed.root.encode('utf-8')
       }
       self.pyi_dir = os.path.join(self.output_dir, 'pyi')
       try:
