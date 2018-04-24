@@ -38,3 +38,7 @@ def expand_path(path, cwd=None):
 
 def expand_paths(paths, cwd=None):
     return [expand_path(x, cwd) for x in paths]
+
+
+def split_version(version):
+   return [int(v) for v in version.split('.')]

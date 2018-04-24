@@ -3,6 +3,8 @@ import os
 import sys
 import tarfile
 
+class FileSystemError(Exception):
+    pass
 
 class FileSystem(object):
     """Interface for file systems."""
@@ -121,3 +123,20 @@ class TarFileSystem(object):
     def read_tarfile(archive_filename):
         tar = tarfile.open(archive_filename)
         return TarFileSystem(tar)
+
+
+class Path(object):
+    def __init__(self):
+        self.paths = []
+
+    def add_path(self, path, kind="os"):
+        if kind == "os":
+            path = OSFileSystem(path)
+        elif kind == "pyi":
+            path = PYIFileSystem(OSFileSystem(path))
+        else:
+            raise FileSystemError("Unrecognized filesystem type: ", kind)
+        self.paths.append(path)
+
+
+

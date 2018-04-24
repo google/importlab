@@ -84,14 +84,33 @@ class ImportGraph(object):
 
     def __init__(self, env):
         self.env = env
+        self.path = env.path
         self.major_version = env.python_version[0]
         self.broken_deps = collections.defaultdict(set)
         self.graph = nx.DiGraph()
         self.root = None
         self.final = False
 
+    @classmethod
+    def create(cls, env, filenames):
+        """Create and return a final graph.
+
+        Args:
+          env: An environment.Environment object
+          filenames: A list of filenames
+
+        Returns:
+          An immutable ImportGraph with the recursive dependencies of all the
+          files in filenames
+        """
+        import_graph = cls(env)
+        for filename in filenames:
+            import_graph.add_file_recursive(os.path.abspath(filename))
+        import_graph.build()
+        return import_graph
+
     def get_file_deps(self, filename):
-        r = resolve.Resolver(self.env.path, filename)
+        r = resolve.Resolver(self.path, filename)
         resolved = []
         unresolved = []
         for imp in parsepy.get_imports(filename, self.major_version):
@@ -163,10 +182,7 @@ class ImportGraph(object):
         prefix = self.find_root()
         if isinstance(node, (Cycle, NodeSet)):
             return node.pp()
-        elif node.startswith(self.env.typeshed.root):
-            return "[%s]" % os.path.relpath(node, self.env.typeshed.root)
-        else:
-            return os.path.relpath(node, prefix)
+        return os.path.relpath(node, prefix)
 
     def inspect_graph(self):
         prefix = self.find_root()

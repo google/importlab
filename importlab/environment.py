@@ -1,40 +1,39 @@
 import os
 import sys
+import sysconfig
 
+from . import utils
 from . import fs
-from pytype.tools import runner
-from pytype.tools import environment as pytype_env
-
-
-def split_version(version):
-   return [int(v) for v in version.split('.')]
-
-
-def check_all_or_die(env):
-    pytype_env.check_pytype_or_die()
-    pytype_env.check_python_exe_or_die(env.python_version_string)
-
 
 class Environment(object):
-    def __init__(self, args, config):
-        self.args = args
-        self.config = config
-        self.typeshed = pytype_env.initialize_typeshed_or_die(self.args)
-        self.python_version_string = config.python_version
-        self.pythonpath = config.make_pythonpath()
-        self.python_version = split_version(self.python_version_string)
-        self.path = self._make_path()
-
-    def _make_path(self):
-        path = [
-            fs.OSFileSystem(path)
-            for path in self.pythonpath.split(os.pathsep)]
-        path += self._make_typeshed_path()
-        return path
-
-    def _make_typeshed_path(self):
-        """Get the names of all modules in typeshed and pytype/pytd/builtins."""
-        return [fs.PYIFileSystem(fs.OSFileSystem(path))
-                for path in self.typeshed.get_paths(self.python_version)]
+    def __init__(self, path, python_version):
+        self.path = path.paths
+        self.python_version = python_version
 
 
+def get_system_paths():
+    seen = set()
+    out = []
+    for x in sys.path + list(sysconfig.get_paths().values()):
+        if x not in seen:
+            seen.add(x)
+            out.append(x)
+    return out
+
+
+def path_from_pythonpath(pythonpath):
+    path = fs.Path()
+    # Add directories from --pythonpath first
+    for p in pythonpath.split(os.pathsep):
+        path.add_path(utils.expand_path(p), 'os')
+    # Then add from sys.path
+    for p in get_system_paths():
+        path.add_path(p, 'os')
+    return path
+
+
+def create_from_args(args):
+    python_version_string = args.python_version
+    python_version = utils.split_version(python_version_string)
+    path = path_from_pythonpath(args.pythonpath)
+    return Environment(path, python_version)
