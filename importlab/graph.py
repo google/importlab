@@ -254,34 +254,3 @@ class ImportGraph(object):
         for v in self.broken_deps.values():
             out |= v
         return out
-
-    def _print_tree(self, root, seen, indent=0):
-        if root in seen:
-            return
-        if not is_source_node(root):
-            return
-        seen.add(root)
-        print('  '*indent + self.format(root))
-        for _, v in self.graph.out_edges([root]):
-            self._print_tree(v, seen, indent=indent+2)
-
-    def print_tree(self):
-        seen = set()
-        for root in nx.topological_sort(self.graph):
-            if not self.graph.in_edges([root]):
-                self._print_tree(root, seen)
-
-    def print_topological_sort(self):
-        for node in nx.topological_sort(self.graph):
-            if is_source_node(node):
-                print(self.format(node))
-
-    def formatted_deps_list(self):
-        out = []
-        for node, deps in self.deps_list():
-            out.append('source: ' + self.format(node))
-            if deps:
-              out.append('deps:')
-              for dep in deps:
-                  out.append('  ' + self.format(dep))
-        return '\n'.join(out)

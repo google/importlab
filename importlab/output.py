@@ -2,6 +2,8 @@ from __future__ import print_function
 
 import networkx as nx
 
+from . import graph
+
 
 def inspect_graph(import_graph):
     prefix = import_graph.find_root()
@@ -19,7 +21,7 @@ def print_tree(import_graph):
     def _print_tree(root, indent=0):
         if root in seen:
             return
-        if not is_source_node(root):
+        if not graph.is_source_node(root):
             return
         seen.add(root)
         print('  '*indent + import_graph.format(root))
@@ -29,12 +31,12 @@ def print_tree(import_graph):
     seen = set()
     for root in nx.topological_sort(import_graph.graph):
         if not import_graph.graph.in_edges([root]):
-            import_graph._print_tree(root)
+            _print_tree(root)
 
 
 def print_topological_sort(import_graph):
     for node in nx.topological_sort(import_graph.graph):
-        if is_source_node(node):
+        if graph.is_source_node(node):
             print(import_graph.format(node))
 
 

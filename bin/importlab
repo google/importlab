@@ -24,6 +24,7 @@ from importlab import config
 from importlab import environment
 from importlab import fs
 from importlab import graph
+from importlab import output
 from importlab import utils
 
 
@@ -50,13 +51,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def read_cfg_file(args):
-    ret = config.Config()
-    if args.cfg:
-        ret.read_from_file(args.cfg)
-    return ret
-
-
 def main():
     args = parse_args()
     env = environment.create_from_args(args)
@@ -64,7 +58,7 @@ def main():
 
     if args.tree:
         print('Source tree:')
-        import_graph.print_tree()
+        output.print_tree(import_graph)
         sys.exit(0)
 
     if args.unresolved:
@@ -77,4 +71,4 @@ def main():
 
 
 if __name__ == "__main__":
-  sys.exit(main())
+    sys.exit(main())
