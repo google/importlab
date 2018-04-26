@@ -17,6 +17,8 @@
 import os
 import sys
 
+from . import import_finder
+
 
 class ImportException(ImportError):
 
@@ -32,23 +34,23 @@ class ModuleAndDependencies(object):
         self.directory = os.path.dirname(self.filename)
 
 
+def convert_to_path(name):
+    """Converts ".module" to "./module", "..module" to "../module", etc."""
+    if name.startswith("."):
+        remainder = name.lstrip(".")
+        dot_count = (len(name) - len(remainder))
+        prefix = "../"*(dot_count-1)
+    else:
+        remainder = name
+        prefix = ""
+    return prefix + os.path.join(*remainder.split("."))
+
+
 class Resolver:
     def __init__(self, fs_path, current_filename):
         self.fs_path = fs_path
         self.current_filename = current_filename
         self.current_directory = os.path.dirname(current_filename)
-
-    @staticmethod
-    def convert_to_path(name):
-        """Converts ".module" to "./module", "..module" to "../module", etc."""
-        if name.startswith("."):
-            remainder = name.lstrip(".")
-            dot_count = (len(name) - len(remainder))
-            prefix = "../"*(dot_count-1)
-        else:
-            remainder = name
-            prefix = ""
-        return prefix + os.path.join(*remainder.split("."))
 
     def _find_file(self, fs, name):
         init = os.path.join(name, "__init__.py")
@@ -57,7 +59,6 @@ class Resolver:
             if fs.isfile(x):
                 return fs.refer_to(x)
         return None
-
 
     def resolve_import(self, item):
         """Simulate how Python resolves imports.
@@ -77,11 +78,10 @@ class Resolver:
         """
         name = item.name
 
-        # Python builtin modules
-        if name in sys.builtin_module_names or name.startswith("__future__"):
+        if import_finder.is_builtin(name):
             return name + ".so"
 
-        filename = self.convert_to_path(name)
+        filename = convert_to_path(name)
         if item.is_relative():
             filename = os.path.join(self.current_directory, filename)
 
@@ -96,6 +96,16 @@ class Resolver:
                  (short_name and self._find_file(fs, short_name)))
             if f:
                 return f
+
+        # If the module isn't found in the explicit pythonpath, see if python
+        # itself resolved it.
+        if item.source:
+            prefix, ext = os.path.splitext(item.source)
+            if ext == '.pyc':
+                pyfile = prefix + '.py'
+                if os.path.exists(pyfile):
+                    return pyfile
+            return item.source
 
         raise ImportException(name)
 

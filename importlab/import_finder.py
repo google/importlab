@@ -1,6 +1,18 @@
+# NOTE: Do not add any dependencies to this file - it needs to be run in a
+# subprocess by a python version that might not have any installed packages,
+# including importlab itself.
+
+from __future__ import print_function
+
 import ast
-import csv
+import json
+import os
 import sys
+
+if sys.version_info.major >= 3:
+    import importlib
+else:
+    import imp
 
 class ImportFinder(ast.NodeVisitor):
     """Walk an AST collecting import statements."""
@@ -26,18 +38,105 @@ class ImportFinder(ast.NodeVisitor):
                 self.imports.append((name, asname, True, False))
 
 
+def _find_package(parts):
+    """Helper function for _resolve_import_2."""
+    for i in range(len(parts), 0, -1):
+        prefix = '.'.join(parts[0:i])
+        if prefix in sys.modules:
+            return i, sys.modules[prefix]
+    return 0, None
+
+
+def is_builtin(name):
+    return name in sys.builtin_module_names or name.startswith("__future__")
+
+
+def _resolve_import_2(name):
+    """Helper function for resolve_import."""
+    parts = name.split('.')
+    i, mod = _find_package(parts)
+    if mod and hasattr(mod, '__file__'):
+        path = os.path.dirname(mod.__file__)
+    else:
+        path = None
+    for part in parts[i:]:
+        try:
+            spec = imp.find_module(part, path)
+        except ImportError:
+            return None
+        path = spec[1]
+    return path
+
+
+def _resolve_import_3(name):
+    """Helper function for resolve_import."""
+    try:
+        spec = importlib.util.find_spec(name)
+        if spec:
+            return spec.origin
+    except AttributeError:
+        pass
+    except ImportError:
+        pass
+    return None
+
+
+def _resolve_import(name):
+    """Helper function for resolve_import."""
+    if name in sys.modules:
+        return getattr(sys.modules[name], '__file__', name + '.so')
+
+    if sys.version_info.major >= 3:
+        return _resolve_import_3(name)
+    else:
+        return _resolve_import_2(name)
+
+
+def resolve_import(name, is_from, is_star):
+    """Use python to resolve an import.
+
+    Args:
+      name: The fully qualified module name.
+
+    Returns:
+      The path to the module source file or None.
+    """
+    # Don't try to resolve relative imports or builtins here; they will be
+    # handled by resolve.Resolver
+    if name.startswith('.') or is_builtin(name):
+        return None
+    ret = _resolve_import(name)
+    if ret is None and is_from and not is_star:
+        package, _ = name.rsplit('.', 1)
+        ret = _resolve_import(package)
+    return ret
+
+
 def get_imports(filename):
+    """Get all the imports in a file.
+
+    Each import is a tuple of:
+      (name, alias, is_from, is_star, source_file)
+    """
     with open(filename, "rb") as f:
         src = f.read()
     finder = ImportFinder()
     finder.visit(ast.parse(src))
-    return finder.imports
+    imports = []
+    for i in finder.imports:
+        name, _, is_from, is_star = i
+        imports.append(i + (resolve_import(name, is_from, is_star),))
+    return imports
 
 
 def print_imports(filename):
     """Print imports in csv format to stdout."""
-    writer = csv.writer(sys.stdout)
-    writer.writerows(get_imports(filename))
+    print(json.dumps(get_imports(filename)))
+
+
+def read_imports(imports_str):
+    """Print imports in csv format to stdout."""
+    return json.loads(imports_str)
 
 
 if __name__ == "__main__":
@@ -45,4 +144,3 @@ if __name__ == "__main__":
     # subprocess and communicating with it via reading stdout.
     filename = sys.argv[1]
     print_imports(filename)
-

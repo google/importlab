@@ -49,3 +49,8 @@ def formatted_deps_list(import_graph):
           for dep in deps:
               out.append('  ' + import_graph.format(dep))
     return '\n'.join(out)
+
+
+def print_unresolved_dependencies(import_graph):
+    for imp in sorted(import_graph.get_all_unresolved()):
+        print(' ', imp.name)

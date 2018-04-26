@@ -16,6 +16,8 @@
 
 """main entry point."""
 
+from __future__ import print_function
+
 import argparse
 import os
 import sys
@@ -63,8 +65,7 @@ def main():
 
     if args.unresolved:
         print('Unresolved dependencies:')
-        for imp in sorted(import_graph.get_all_unresolved()):
-            print(' ', imp.name)
+        output.print_unresolved_dependencies(import_graph)
         sys.exit(0)
 
     print('Nothing to do!')

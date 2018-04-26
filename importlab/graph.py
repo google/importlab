@@ -113,7 +113,7 @@ class ImportGraph(object):
         r = resolve.Resolver(self.path, filename)
         resolved = []
         unresolved = []
-        for imp in parsepy.get_imports(filename, self.major_version):
+        for imp in parsepy.get_imports(filename, self.env.python_version):
             try:
                 f = r.resolve_import(imp)
                 if not f.endswith(".so"):

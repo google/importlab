@@ -11,24 +11,11 @@ class Environment(object):
         self.python_version = python_version
 
 
-def get_system_paths():
-    seen = set()
-    out = []
-    for x in sys.path + list(sysconfig.get_paths().values()):
-        if x not in seen:
-            seen.add(x)
-            out.append(x)
-    return out
-
-
 def path_from_pythonpath(pythonpath):
+    """Create an fs.Path object from a pythonpath string."""
     path = fs.Path()
-    # Add directories from --pythonpath first
     for p in pythonpath.split(os.pathsep):
         path.add_path(utils.expand_path(p), 'os')
-    # Then add from sys.path
-    for p in get_system_paths():
-        path.add_path(p, 'os')
     return path
 
 

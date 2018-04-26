@@ -38,3 +38,10 @@ def can_run(exe, *args):
         return True
     except OSError:
         return False
+
+
+def run_py_file(version, path, *args):
+    exe = 'python%d.%d' % version
+    args = [exe, path] + list(args)
+    r = BinaryRun(args)
+    return r.communicate()
