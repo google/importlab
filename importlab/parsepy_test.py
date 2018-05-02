@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for parsepy.py under python2.7.
+"""Tests for parsepy.py.
 
 Run as
 $ python2.7 -m importlab.parsepy_test
 """
 
+import tempfile
 import textwrap
 import unittest
+import sys
 
 from . import parsepy
 
@@ -27,37 +29,45 @@ from . import parsepy
 class TestParsePy(unittest.TestCase):
   """Tests for parsepy.py."""
 
+  PYTHON_VERSION = (2, 7)
+
   def parse(self, src):
-    return parsepy.scan_string(textwrap.dedent(src))
+    with tempfile.NamedTemporaryFile() as f:
+        src = textwrap.dedent(src)
+        if sys.version_info[0] == 3:
+            src = src.encode('utf-8')
+        f.write(src)
+        f.flush()
+        return parsepy.get_imports(f.name, self.PYTHON_VERSION)
 
   def test_simple(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       import a
     """), [parsepy.ImportStatement(name="a")])
 
   def test_dotted(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       import a.b
     """), [parsepy.ImportStatement(name="a.b")])
 
   def test_as(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       import a as b
     """), [parsepy.ImportStatement(name="a", new_name="b")])
 
   def test_dotted_as(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       import a.b as c
     """), [parsepy.ImportStatement(name="a.b", new_name="c")])
 
   def test_dotted_comma(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       import a.b, c
     """), [parsepy.ImportStatement(name="a.b"),
            parsepy.ImportStatement(name="c")])
 
   def test_multiple_1(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       import a, b, c, d
     """), [parsepy.ImportStatement(name="a"),
            parsepy.ImportStatement(name="b"),
@@ -65,13 +75,13 @@ class TestParsePy(unittest.TestCase):
            parsepy.ImportStatement(name="d")])
 
   def test_multiple_2(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       import a, b as bb
     """), [parsepy.ImportStatement(name="a"),
            parsepy.ImportStatement(name="b", new_name="bb")])
 
   def test_multiple_3(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       import a, b as bb, a.x, a.x.y as a_x_y
     """), [parsepy.ImportStatement(name="a"),
            parsepy.ImportStatement(name="b", new_name="bb"),
@@ -80,7 +90,7 @@ class TestParsePy(unittest.TestCase):
           ])
 
   def test_multiple_4(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       import a
       import b
       import c
@@ -91,45 +101,45 @@ class TestParsePy(unittest.TestCase):
            parsepy.ImportStatement(name="d")])
 
   def test_from(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from a import b
     """), [parsepy.ImportStatement(name="a.b", new_name="b", is_from=True)])
 
   def test_from_with_rename(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from a import b as c
     """), [parsepy.ImportStatement(name="a.b", new_name="c", is_from=True)])
 
   def test_dotted_from(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from a.b.c import d as e
     """), [parsepy.ImportStatement(name="a.b.c.d", new_name="e", is_from=True)])
 
   def test_from_multiple(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from a import b, c, d as dd
     """), [parsepy.ImportStatement(name="a.b", new_name="b", is_from=True),
            parsepy.ImportStatement(name="a.c", new_name="c", is_from=True),
            parsepy.ImportStatement(name="a.d", new_name="dd", is_from=True)])
 
   def test_from_parentheses(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from a import (b, c, d as dd)
     """), [parsepy.ImportStatement(name="a.b", new_name="b", is_from=True),
            parsepy.ImportStatement(name="a.c", new_name="c", is_from=True),
            parsepy.ImportStatement(name="a.d", new_name="dd", is_from=True)])
 
   def test_asterisk(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from a import *
       from a.b import *
       from a . b . c import *
-    """), [parsepy.ImportStatement(name="a", everything=True),
-           parsepy.ImportStatement(name="a.b", everything=True),
-           parsepy.ImportStatement(name="a.b.c", everything=True)])
+    """), [parsepy.ImportStatement(name="a", is_from=True, everything=True),
+           parsepy.ImportStatement(name="a.b", is_from=True, everything=True),
+           parsepy.ImportStatement(name="a.b.c", is_from=True, everything=True)])
 
   def test_dot(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from . import a
       from .a import b
       from .a.b import c
@@ -137,10 +147,10 @@ class TestParsePy(unittest.TestCase):
     """), [parsepy.ImportStatement(name=".a", new_name="a", is_from=True),
            parsepy.ImportStatement(name=".a.b", new_name="b", is_from=True),
            parsepy.ImportStatement(name=".a.b.c", new_name="c", is_from=True),
-           parsepy.ImportStatement(name=".a.b.c", everything=True)])
+           parsepy.ImportStatement(name=".a.b.c", is_from=True, everything=True)])
 
   def test_dotdot(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from .. import a
       from ..a import b
       from ..a.b import c
@@ -148,41 +158,41 @@ class TestParsePy(unittest.TestCase):
     """), [parsepy.ImportStatement(name="..a", new_name="a", is_from=True),
            parsepy.ImportStatement(name="..a.b", new_name="b", is_from=True),
            parsepy.ImportStatement(name="..a.b.c", new_name="c", is_from=True),
-           parsepy.ImportStatement(name="..a.b.c", everything=True)])
+           parsepy.ImportStatement(name="..a.b.c", is_from=True, everything=True)])
 
   def test_dotdotdot_asterisk(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from ... import *
-    """), [parsepy.ImportStatement(name="...", everything=True)])
+    """), [parsepy.ImportStatement(name="...", is_from=True, everything=True)])
 
   def test_dot_multiple(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from . import a, b, c as cc
     """), [parsepy.ImportStatement(name=".a", new_name="a", is_from=True),
            parsepy.ImportStatement(name=".b", new_name="b", is_from=True),
            parsepy.ImportStatement(name=".c", new_name="cc", is_from=True)])
 
   def test_encoding_utf8(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       # -*- coding: utf-8 -*-
       # Author: Lo\x6f\xc3\xafc Fooman
       import a
     """), [parsepy.ImportStatement(name="a")])
 
   def test_encoding_latin1(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       # -*- coding: iso-8859-1 -*-
       # Author: Thomas Sch\xf6n
       import a
     """), [parsepy.ImportStatement(name="a")])
 
   def test_print_statement(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       print "hello", "world", "!"
     """), [])
 
   def test_print_function(self):
-    self.assertItemsEqual(self.parse("""
+    self.assertEqual(self.parse("""
       from __future__ import print_function
       import sys
       print("hello world", file=sys.stdout)
@@ -192,12 +202,15 @@ class TestParsePy(unittest.TestCase):
 
   def test_non_utf8(self):
     """Verify that we can parse files with non-utf8 encoding."""
+    if sys.version_info[0] == 3:
+        # TODO(mdemello): Get this working under python3
+        return
     src = (
         b"# -*- coding: iso-8859-1 -*-\n" +
         b"# Copyright (C) 1984 F" + chr(0xf6) + b"man\n"
     )
     self.assertRaises(UnicodeDecodeError, unicode, src)
-    self.assertItemsEqual(self.parse(src), [])
+    self.assertEqual(self.parse(src), [])
 
 
 if __name__ == "__main__":

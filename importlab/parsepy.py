@@ -48,7 +48,7 @@ class ImportStatement(collections.namedtuple(
   def is_relative(self):
       return self.name.startswith(".")
 
-  def __repr__(self):
+  def __str__(self):
     if self.everything:
         assert self.name == self.new_name
         assert self.is_from
