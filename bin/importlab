@@ -22,7 +22,6 @@ import argparse
 import os
 import sys
 
-from importlab import config
 from importlab import environment
 from importlab import fs
 from importlab import graph
