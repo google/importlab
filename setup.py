@@ -10,11 +10,11 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data.
 NAME = 'importlab'
-DESCRIPTION = 'A tool to run static analysis over large python projects.'
+DESCRIPTION = 'A tool to calculate dependency graphs of Python files.'
 URL = 'https://github.com/google/importlab'
 EMAIL = 'pytype-dev@google.com'
 AUTHOR = 'Google Inc.'
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=2.7.0'
 VERSION = '0.1'
 
 REQUIRED = [
@@ -53,7 +53,7 @@ setup(
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
