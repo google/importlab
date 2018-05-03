@@ -71,10 +71,10 @@ def is_source_node(x):
     return isinstance(x, (Cycle, NodeSet)) or x.endswith(".py")
 
 
-class ImportGraph(object):
-    """A set of dependencies stored in a graph structure.
+class DependencyGraph(object):
+    """A set of file dependencies stored in a graph structure.
 
-    The ImportGraph needs to be constructed in two phases:
+    The graph needs to be constructed in two phases:
     1. Call add_file_recursive() for every root file you want to add to the graph.
     2. Call build() to collapse cycles and build the final graph.
 
@@ -82,45 +82,14 @@ class ImportGraph(object):
     thereafter.
     """
 
-    def __init__(self, env):
-        self.env = env
-        self.path = env.path
-        self.major_version = env.python_version[0]
-        self.broken_deps = collections.defaultdict(set)
+    def __init__(self):
         self.graph = nx.DiGraph()
+        self.broken_deps = collections.defaultdict(set)
         self.root = None
         self.final = False
 
-    @classmethod
-    def create(cls, env, filenames):
-        """Create and return a final graph.
-
-        Args:
-          env: An environment.Environment object
-          filenames: A list of filenames
-
-        Returns:
-          An immutable ImportGraph with the recursive dependencies of all the
-          files in filenames
-        """
-        import_graph = cls(env)
-        for filename in filenames:
-            import_graph.add_file_recursive(os.path.abspath(filename))
-        import_graph.build()
-        return import_graph
-
     def get_file_deps(self, filename):
-        r = resolve.Resolver(self.path, filename)
-        resolved = []
-        unresolved = []
-        for imp in parsepy.get_imports(filename, self.env.python_version):
-            try:
-                f = r.resolve_import(imp)
-                if not f.endswith(".so"):
-                    resolved.append(os.path.abspath(f))
-            except resolve.ImportException:
-                unresolved.append(imp)
-        return (resolved, unresolved)
+        raise NotImplementedError()
 
     def add_file(self, filename):
         """Add a file and all its immediate dependencies to the graph."""
@@ -233,7 +202,7 @@ class ImportGraph(object):
             else:
                 # We don't care about other deps
                 pass
-        return reversed(out)
+        return list(reversed(out))
 
     def deps_list(self):
         """Returns a list of (target, dependencies)."""
@@ -254,3 +223,44 @@ class ImportGraph(object):
         for v in self.broken_deps.values():
             out |= v
         return out
+
+
+class ImportGraph(DependencyGraph):
+    """A dependency graph built from file imports."""
+
+    def __init__(self, env):
+        super(ImportGraph, self).__init__()
+        self.env = env
+        self.path = env.path
+        self.major_version = env.python_version[0]
+
+    @classmethod
+    def create(cls, env, filenames):
+        """Create and return a final graph.
+
+        Args:
+          env: An environment.Environment object
+          filenames: A list of filenames
+
+        Returns:
+          An immutable ImportGraph with the recursive dependencies of all the
+          files in filenames
+        """
+        import_graph = cls(env)
+        for filename in filenames:
+            import_graph.add_file_recursive(os.path.abspath(filename))
+        import_graph.build()
+        return import_graph
+
+    def get_file_deps(self, filename):
+        r = resolve.Resolver(self.path, filename)
+        resolved = []
+        unresolved = []
+        for imp in parsepy.get_imports(filename, self.env.python_version):
+            try:
+                f = r.resolve_import(imp)
+                if not f.endswith(".so"):
+                    resolved.append(os.path.abspath(f))
+            except resolve.ImportException:
+                unresolved.append(imp)
+        return (resolved, unresolved)
