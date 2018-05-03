@@ -74,6 +74,9 @@ def get_imports(filename, python_version):
   else:
       # Call the appropriate python version in a subprocess
       f = sys.modules['importlab.import_finder'].__file__
+      if f.rsplit('.', 1)[-1] == 'pyc':
+        # In host Python 2, importlab ships with .pyc files.
+        f = f[:-1]
       ret, stdout, stderr = runner.run_py_file(python_version, f, filename)
       if not ret:
           if sys.version_info[0] == 3:
