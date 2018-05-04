@@ -23,7 +23,7 @@ import textwrap
 import unittest
 import sys
 
-from . import parsepy
+from importlab import parsepy
 
 
 class TestParsePy(unittest.TestCase):

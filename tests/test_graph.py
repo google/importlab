@@ -1,17 +1,17 @@
 """Tests for graph.py.
 
 Run as
-$ python -m importlab.graph_test
+$ python -m tests.graph_test
 """
 
 import unittest
 
-from . import graph
+from importlab import graph
 
 
 class TestCycle(unittest.TestCase):
     """Tests for Cycle."""
-    
+
     def test_flatten(self):
         a = graph.Cycle([[1, 2], [2, 3], [3, 1]])
         b = graph.Cycle([[4, 5], [5, 4]])
@@ -22,7 +22,7 @@ class TestCycle(unittest.TestCase):
 
 class FakeImportGraph(graph.DependencyGraph):
     """An ImportGraph with file imports stubbed out.
-    
+
     Also adds ordered_foo() wrappers around output methods to help in testing.
     """
 
