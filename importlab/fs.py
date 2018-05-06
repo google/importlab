@@ -78,7 +78,7 @@ class OSFileSystem(FileSystem):
 
 
 class PYIFileSystem(FileSystem):
-    """File system that transparently changes .pyi to .py."""
+    """File system that transparently changes .py to .pyi."""
 
     def __init__(self, underlying):
         self.underlying = underlying
@@ -87,7 +87,7 @@ class PYIFileSystem(FileSystem):
         return self.underlying.isfile(path + "i")
 
     def isdir(self, path):
-        return self.underlying.isdir(path + "i")
+        return self.underlying.isdir(path)
 
     def read(self, path):
         return self.underlying.read(path + "i")
@@ -100,10 +100,10 @@ class TarFileSystem(object):
     """Filesystem that serves files out of a .tar."""
 
     def __init__(self, tar):
-      self.tar = tar
-      self.files = list(t.name for t in tar.getmembers() if t.isfile())
-      self.directories = list(t.name for t in tar.getmembers() if t.isdir())
-      self.top_level = {f.split(os.path.sep)[0] for f in self.files}
+        self.tar = tar
+        self.files = list(t.name for t in tar.getmembers() if t.isfile())
+        self.directories = list(t.name for t in tar.getmembers() if t.isdir())
+        self.top_level = {f.split(os.path.sep)[0] for f in self.files}
 
     def isfile(self, path):
         return any(os.path.join(top, path) in self.files
@@ -137,6 +137,3 @@ class Path(object):
         else:
             raise FileSystemError("Unrecognized filesystem type: ", kind)
         self.paths.append(path)
-
-
-
