@@ -5,21 +5,20 @@ import unittest
 from importlab import fs
 from importlab import utils
 
-FILES = [
-        ("a.py", "contents of a"),
-        ("b.py", "contents of b"),
-        ("foo/c.py", "contents of c"),
-        ("foo/d.py", "contents of d"),
-        ("bar/e.py", "contents of e")
-]
+FILES = {
+        "a.py": "contents of a",
+        "b.py": "contents of b",
+        "foo/c.py": "contents of c",
+        "foo/d.py": "contents of d",
+        "bar/e.py": "contents of e"
+}
 
 
 class TestStoredFileSystem(unittest.TestCase):
   """Tests for StoredFileSystem."""
 
   def setUp(self):
-      files = ["a.py", "b.py", "foo/c.py", "foo/d.py", "bar/e.py"]
-      self.fs = fs.StoredFileSystem({f: True for f in files})
+      self.fs = fs.StoredFileSystem(FILES)
 
   def testIsFile(self):
       self.assertTrue(self.fs.isfile("a.py"))
@@ -45,8 +44,8 @@ class TestOSFileSystem(unittest.TestCase):
   def setUp(self):
       self.tempdir = utils.Tempdir()
       self.tempdir.setup()
-      for f, contents in FILES:
-          f = self.tempdir.create_file(f, contents)
+      for f in FILES:
+          self.tempdir.create_file(f, FILES[f])
       self.fs = fs.OSFileSystem(self.tempdir.path)
 
   def tearDown(self):
@@ -70,8 +69,8 @@ class TestPyiFileSystem(unittest.TestCase):
   def setUp(self):
       self.tempdir = utils.Tempdir()
       self.tempdir.setup()
-      for f, contents in FILES:
-          f = self.tempdir.create_file(f + "i", contents)
+      for f in FILES:
+          self.tempdir.create_file(f + "i", FILES[f])
       self.fs = fs.PYIFileSystem(
               fs.OSFileSystem(self.tempdir.path))
 

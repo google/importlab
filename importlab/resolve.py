@@ -21,7 +21,6 @@ from . import import_finder
 
 
 class ImportException(ImportError):
-
     def __init__(self, module_name):
         super(ImportException, self).__init__(module_name)
         self.module_name = module_name
@@ -83,7 +82,8 @@ class Resolver:
 
         filename = convert_to_path(name)
         if item.is_relative():
-            filename = os.path.join(self.current_directory, filename)
+            filename = os.path.normpath(
+                os.path.join(self.current_directory, filename))
 
         # The last part in `from a.b.c import d` might be a symbol rather than a
         # module, so we try both a/b/c/d.py and a/b/c.py
