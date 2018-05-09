@@ -63,8 +63,41 @@ class TestOSFileSystem(unittest.TestCase):
       self.assertFalse(self.fs.isdir("a.py"))
 
 
-class TestPyiFileSystem(unittest.TestCase):
-  """Tests for OSFileSystem."""
+class LowercasingFileSystem(fs.RemappingFileSystem):
+    """Remapping file system subclass for tests."""
+
+    def map_path(self, path):
+        return path.lower()
+
+
+class TestRemappingFileSystem(unittest.TestCase):
+  """Tests for RemappingFileSystem."""
+
+  def setUp(self):
+      self.tempdir = utils.Tempdir()
+      self.tempdir.setup()
+      for f in FILES:
+          self.tempdir.create_file(f, FILES[f])
+      self.fs = LowercasingFileSystem(
+              fs.OSFileSystem(self.tempdir.path))
+
+  def tearDown(self):
+      self.tempdir.teardown()
+
+  def testIsFile(self):
+      self.assertTrue(self.fs.isfile("A.py"))
+      self.assertTrue(self.fs.isfile("FOO/c.py"))
+      self.assertFalse(self.fs.isfile("foO/B.py"))
+
+  def testIsDir(self):
+      self.assertTrue(self.fs.isdir("fOO"))
+      self.assertTrue(self.fs.isdir(""))
+      self.assertFalse(self.fs.isdir("FOO/C.PY"))
+      self.assertFalse(self.fs.isdir("a.PY"))
+
+
+class TestPYIFileSystem(unittest.TestCase):
+    """Tests for PYIFileSystem (also tests ExtensionRemappingFileSystem)."""
 
   def setUp(self):
       self.tempdir = utils.Tempdir()

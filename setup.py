@@ -18,7 +18,8 @@ REQUIRES_PYTHON = '>=2.7.0'
 VERSION = '0.1'
 
 REQUIRED = [
-    'networkx'
+    'networkx',
+    'six'
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))
