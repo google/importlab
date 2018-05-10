@@ -11,8 +11,8 @@ import textwrap
 
 def setup_logging(name, log_file, level=logging.INFO):
     formatter = logging.Formatter(
-            fmt='%(asctime)s %(levelname)s %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S')
+        fmt='%(asctime)s %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S')
     handler = logging.FileHandler(log_file)
     handler.setFormatter(formatter)
     logger = logging.getLogger(name)
@@ -32,7 +32,9 @@ def cd(path):
 
 
 def expand_path(path, cwd=None):
-    expand = lambda path: os.path.realpath(os.path.expanduser(path))
+    def expand(p):
+        return os.path.realpath(os.path.expanduser(p))
+
     if cwd:
         with cd(cwd):
             return expand(path)
@@ -74,7 +76,10 @@ class Tempdir(object):
         return path
 
     def create_file(self, filename, indented_data=None):
-        """Create a file in the tempdforary directory. Dedents the contents."""
+        """Create a file in the temporary directory.
+
+        Dedents the contents.
+        """
         filedir, filename = os.path.split(filename)
         if filedir:
             self.create_directory(filedir)
@@ -82,9 +87,9 @@ class Tempdir(object):
         data = indented_data
         if isinstance(data, bytes) and not isinstance(data, str):
             # This is binary data rather than text.
-            mode = "wb"
+            mode = 'wb'
         else:
-            mode = "w"
+            mode = 'w'
             if data:
                 data = textwrap.dedent(data)
         with open(path, mode) as fi:

@@ -96,5 +96,6 @@ class TestResolver(unittest.TestCase):
         fname = r.resolve_import(imp)
         self.assertEqual(fname, "/system/f.pyc")
 
+
 if __name__ == "__main__":
     unittest.main()

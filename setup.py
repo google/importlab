@@ -3,10 +3,8 @@
 
 import io
 import os
-import sys
-from shutil import rmtree
 
-from setuptools import find_packages, setup, Command
+from setuptools import find_packages, setup
 
 # Package meta-data.
 NAME = 'importlab'
@@ -36,7 +34,7 @@ if not VERSION:
 else:
     about['__version__'] = VERSION
 
-PACKAGES=find_packages(exclude=('tests',))
+PACKAGES = find_packages(exclude=('tests',))
 
 setup(
     name=NAME,

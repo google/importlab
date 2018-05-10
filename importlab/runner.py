@@ -1,8 +1,6 @@
 import os
 import subprocess
-import sys
 
-from . import utils
 
 class BinaryRun(object):
     def __init__(self, args, dry_run=False, env=None):

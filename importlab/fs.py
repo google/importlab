@@ -1,12 +1,13 @@
 import abc
 import os
-import sys
 import tarfile
 
 from six import with_metaclass
 
+
 class FileSystemError(Exception):
     pass
+
 
 class FileSystem(with_metaclass(abc.ABCMeta, object)):
     """Interface for file systems."""
@@ -30,6 +31,7 @@ class FileSystem(with_metaclass(abc.ABCMeta, object)):
     def refer_to(self, path):
         """Get a fully qualified path for the given path."""
         pass
+
 
 class StoredFileSystem(FileSystem):
     """File system based on a file list."""
@@ -70,7 +72,7 @@ class OSFileSystem(FileSystem):
         return os.path.isdir(self._join(path))
 
     def read(self, path):
-        with open(self._join(path), "r") as fi:
+        with open(self._join(path), 'r') as fi:
             return fi.read()
 
     def refer_to(self, path):
@@ -109,8 +111,8 @@ class ExtensionRemappingFileSystem(RemappingFileSystem):
 
     def map_path(self, path):
         p, ext = os.path.splitext(path)
-        if ext == ".py":
-            return p + "." + self.extension
+        if ext == '.py':
+            return p + '.' + self.extension
         return path
 
 
@@ -118,7 +120,7 @@ class PYIFileSystem(ExtensionRemappingFileSystem):
     """File system that remaps .py file extensions to pyi."""
 
     def __init__(self, underlying):
-        super(PYIFileSystem, self).__init__(underlying, "pyi")
+        super(PYIFileSystem, self).__init__(underlying, 'pyi')
 
 
 class TarFileSystem(object):
@@ -142,7 +144,7 @@ class TarFileSystem(object):
         return self.tar.extractfile(path).read()
 
     def refer_to(self, path):
-        return "tar:" + path
+        return 'tar:' + path
 
     @staticmethod
     def read_tarfile(archive_filename):
@@ -154,15 +156,15 @@ class Path(object):
     def __init__(self):
         self.paths = []
 
-    def add_path(self, path, kind="os"):
-        if kind == "os":
+    def add_path(self, path, kind='os'):
+        if kind == 'os':
             path = OSFileSystem(path)
-        elif kind == "pyi":
+        elif kind == 'pyi':
             path = PYIFileSystem(OSFileSystem(path))
         else:
-            raise FileSystemError("Unrecognized filesystem type: ", kind)
+            raise FileSystemError('Unrecognized filesystem type: ', kind)
         self.paths.append(path)
 
     def add_fs(self, fs):
-        assert isinstance(fs, FileSystem), "Unrecognised filesystem: %r" % fs
+        assert isinstance(fs, FileSystem), 'Unrecognised filesystem: %r' % fs
         self.paths.append(fs)

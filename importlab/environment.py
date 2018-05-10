@@ -1,9 +1,8 @@
 import os
-import sys
-import sysconfig
 
 from . import utils
 from . import fs
+
 
 class Environment(object):
     def __init__(self, path, python_version):

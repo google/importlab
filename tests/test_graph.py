@@ -66,7 +66,7 @@ class TestImportGraph(unittest.TestCase):
         indices = [xs.index(arg) for arg in args]
         for i in range(1, len(indices)):
             self.assertTrue(indices[i - 1] < indices[i],
-                    "%s comes before %s" % (args[i], args[i - 1]))
+                            "%s comes before %s" % (args[i], args[i - 1]))
 
     def test_simple(self):
         g = FakeImportGraph(SIMPLE_DEPS)
@@ -87,14 +87,13 @@ class TestImportGraph(unittest.TestCase):
         g.add_file_recursive("a.py")
         g.build()
         cycles = [x for x, ys in g.ordered_deps_list()
-                if isinstance(x, graph.NodeSet)]
+                  if isinstance(x, graph.NodeSet)]
         self.assertEqual(len(cycles), 1)
         self.assertItemsEqual(cycles[0].nodes, ["a.py", "b.py"])
         self.assertEqual(g.get_all_unresolved(), set(["e", "f"]))
         sources = g.ordered_sorted_source_files()
         self.check_order(sources, ["d.py"], ["a.py", "b.py"])
         self.check_order(sources, ["c.py"], ["a.py", "b.py"])
-
 
 
 if __name__ == "__main__":

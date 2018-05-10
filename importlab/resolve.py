@@ -15,7 +15,6 @@
 """Logic for resolving import paths."""
 
 import os
-import sys
 
 from . import import_finder
 
@@ -35,14 +34,14 @@ class ModuleAndDependencies(object):
 
 def convert_to_path(name):
     """Converts ".module" to "./module", "..module" to "../module", etc."""
-    if name.startswith("."):
-        remainder = name.lstrip(".")
+    if name.startswith('.'):
+        remainder = name.lstrip('.')
         dot_count = (len(name) - len(remainder))
-        prefix = "../"*(dot_count-1)
+        prefix = '../'*(dot_count-1)
     else:
         remainder = name
-        prefix = ""
-    return prefix + os.path.join(*remainder.split("."))
+        prefix = ''
+    return prefix + os.path.join(*remainder.split('.'))
 
 
 class Resolver:
@@ -52,8 +51,8 @@ class Resolver:
         self.current_directory = os.path.dirname(current_filename)
 
     def _find_file(self, fs, name):
-        init = os.path.join(name, "__init__.py")
-        py = name + ".py"
+        init = os.path.join(name, '__init__.py')
+        py = name + '.py'
         for x in [init, py]:
             if fs.isfile(x):
                 return fs.refer_to(x)
@@ -78,7 +77,7 @@ class Resolver:
         name = item.name
 
         if import_finder.is_builtin(name):
-            return name + ".so"
+            return name + '.so'
 
         filename = convert_to_path(name)
         if item.is_relative():
@@ -110,12 +109,15 @@ class Resolver:
         raise ImportException(name)
 
     def resolve_all(self, import_items):
-        """Resolves a list of imports. Yields filenames."""
+        """Resolves a list of imports.
+
+        Yields filenames.
+        """
         for import_item in import_items:
-              try:
-                  yield self.resolve_import(import_item)
-              except ImportException as err:
-                  print("unknown module", err.module_name)
+            try:
+                yield self.resolve_import(import_item)
+            except ImportException as err:
+                print('unknown module', err.module_name)
 
 
 def show_import_tree(self, seen=None, indent=0):
@@ -126,8 +128,8 @@ def show_import_tree(self, seen=None, indent=0):
         seen.add(imported.name)
         try:
             mod = self.resolve_import(imported.name)
-            print(" "*(indent*4) + str(imported))
+            print(' '*(indent*4) + str(imported))
             mod.show_import_tree(seen, indent+1)
-        except ImportException as err:
+        except ImportException:
             # mark import we didn't find with '!'
-            print(" "*(indent*4) + "!" + str(imported))
+            print(' '*(indent*4) + '!' + str(imported))

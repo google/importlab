@@ -14,6 +14,7 @@ if sys.version_info.major >= 3:
 else:
     import imp
 
+
 class ImportFinder(ast.NodeVisitor):
     """Walk an AST collecting import statements."""
 

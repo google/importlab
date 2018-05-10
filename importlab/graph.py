@@ -5,7 +5,6 @@ import networkx as nx
 
 from . import resolve
 from . import parsepy
-from . import import_finder
 
 
 class Cycle(object):
@@ -35,7 +34,7 @@ class Cycle(object):
         return v in self.nodes
 
     def pp(self):
-        return "Cycle(" + '->'.join([self._fmt(f) for f in self.nodes]) + ")"
+        return 'Cycle(' + '->'.join([self._fmt(f) for f in self.nodes]) + ')'
 
     def __str__(self):
         return self.pp()
@@ -55,7 +54,7 @@ class NodeSet(object):
         return os.path.relpath(node, self.root)
 
     def pp(self):
-        return "[" + '->'.join([self._fmt(f) for f in self.nodes]) + "]"
+        return '[' + '->'.join([self._fmt(f) for f in self.nodes]) + ']'
 
     def __str__(self):
         return self.pp()
@@ -68,14 +67,14 @@ class NodeSet(object):
 
 
 def is_source_node(x):
-    return isinstance(x, (Cycle, NodeSet)) or x.endswith(".py")
+    return isinstance(x, (Cycle, NodeSet)) or x.endswith('.py')
 
 
 class DependencyGraph(object):
     """A set of file dependencies stored in a graph structure.
 
     The graph needs to be constructed in two phases:
-    1. Call add_file_recursive() for every root file you want to add to the graph.
+    1. Call add_file_recursive() for every root file to add to the graph.
     2. Call build() to collapse cycles and build the final graph.
 
     Calling build() sets self.final = True and treats the graph as immutable
@@ -94,7 +93,7 @@ class DependencyGraph(object):
     def add_file(self, filename):
         """Add a file and all its immediate dependencies to the graph."""
 
-        assert not self.final, "Trying to mutate a final graph."
+        assert not self.final, 'Trying to mutate a final graph.'
         resolved, unresolved = self.get_file_deps(filename)
         self.graph.add_node(filename)
         for f in resolved:
@@ -106,7 +105,7 @@ class DependencyGraph(object):
     def add_file_recursive(self, filename):
         """Add a file and all its recursive dependencies to the graph."""
 
-        assert not self.final, "Trying to mutate a final graph."
+        assert not self.final, 'Trying to mutate a final graph.'
         queue = collections.deque([filename])
         seen = set()
         while queue:
@@ -116,9 +115,9 @@ class DependencyGraph(object):
             for f in broken:
                 self.broken_deps[filename].add(f)
             for f in deps:
-                if (not f in self.graph.nodes and
-                    not f in seen and
-                    f.endswith(".py")):
+                if (f not in self.graph.nodes and
+                    f not in seen and
+                        f.endswith('.py')):
                     queue.append(f)
                     seen.add(f)
                 self.graph.add_node(f)
@@ -134,7 +133,7 @@ class DependencyGraph(object):
         return self.root
 
     def extract_cycle(self, cycle):
-        assert not self.final, "Trying to mutate a final graph."
+        assert not self.final, 'Trying to mutate a final graph.'
         self.graph.add_node(cycle)
         edges = list(self.graph.edges)
         for k, v in edges:
@@ -154,20 +153,19 @@ class DependencyGraph(object):
         return os.path.relpath(node, prefix)
 
     def inspect_graph(self):
-        prefix = self.find_root()
         keys = set(x[0] for x in self.graph.edges)
         for key in sorted(keys):
             k = self.format(key)
             for _, value in sorted(self.graph.edges([key])):
                 v = self.format(value)
-                print("  %s -> %s" % (k, v))
+                print('  %s -> %s' % (k, v))
             for value in sorted(self.broken_deps[key]):
-                print("  %s -> <%s>" % (k, value))
+                print('  %s -> <%s>' % (k, value))
 
     def build(self):
         """Finalise the graph, after adding all input files to it."""
 
-        assert not self.final, "Trying to mutate a final graph."
+        assert not self.final, 'Trying to mutate a final graph.'
 
         # Recursively extract cycles until the graph is cycle-free.
         prefix = self.find_root()
@@ -191,12 +189,12 @@ class DependencyGraph(object):
     def sorted_source_files(self):
         """Returns a list of targets in topologically sorted order."""
 
-        assert self.final, "Call build() before using the graph."
+        assert self.final, 'Call build() before using the graph.'
         out = []
         for node in nx.topological_sort(self.graph):
             if isinstance(node, NodeSet):
                 out.append(node.nodes)
-            elif node.endswith(".py"):
+            elif node.endswith('.py'):
                 # add a one-element list for uniformity
                 out.append([node])
             else:
@@ -207,7 +205,7 @@ class DependencyGraph(object):
     def deps_list(self):
         """Returns a list of (target, dependencies)."""
 
-        assert self.final, "Call build() before using the graph."
+        assert self.final, 'Call build() before using the graph.'
         out = []
         for node in nx.topological_sort(self.graph):
             if is_source_node(node):
@@ -218,7 +216,7 @@ class DependencyGraph(object):
 
     def get_all_unresolved(self):
         """Returns a set of all unresolved imports."""
-        assert self.final, "Call build() before using the graph."
+        assert self.final, 'Call build() before using the graph.'
         out = set()
         for v in self.broken_deps.values():
             out |= v
@@ -259,7 +257,7 @@ class ImportGraph(DependencyGraph):
         for imp in parsepy.get_imports(filename, self.env.python_version):
             try:
                 f = r.resolve_import(imp)
-                if not f.endswith(".so"):
+                if not f.endswith('.so'):
                     resolved.append(os.path.abspath(f))
             except resolve.ImportException:
                 unresolved.append(imp)
