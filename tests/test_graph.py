@@ -1,8 +1,4 @@
-"""Tests for graph.py.
-
-Run as
-$ python -m tests.graph_test
-"""
+"""Tests for graph.py."""
 
 import unittest
 
@@ -86,10 +82,10 @@ class TestImportGraph(unittest.TestCase):
         g = FakeImportGraph(SIMPLE_CYCLIC_DEPS)
         g.add_file_recursive("a.py")
         g.build()
-        cycles = [x for x, ys in g.ordered_deps_list()
+        cycles = [x for x, ys in g.deps_list()
                   if isinstance(x, graph.NodeSet)]
         self.assertEqual(len(cycles), 1)
-        self.assertItemsEqual(cycles[0].nodes, ["a.py", "b.py"])
+        self.assertEqual(set(cycles[0].nodes), set(["a.py", "b.py"]))
         self.assertEqual(g.get_all_unresolved(), set(["e", "f"]))
         sources = g.ordered_sorted_source_files()
         self.check_order(sources, ["d.py"], ["a.py", "b.py"])
