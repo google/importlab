@@ -15,52 +15,52 @@ FILES = {
 
 
 class TestStoredFileSystem(unittest.TestCase):
-  """Tests for StoredFileSystem."""
+    """Tests for StoredFileSystem."""
 
-  def setUp(self):
-      self.fs = fs.StoredFileSystem(FILES)
+    def setUp(self):
+        self.fs = fs.StoredFileSystem(FILES)
 
-  def testIsFile(self):
-      self.assertTrue(self.fs.isfile("a.py"))
-      self.assertTrue(self.fs.isfile("foo/c.py"))
-      self.assertFalse(self.fs.isfile("foo/b.py"))
+    def testIsFile(self):
+        self.assertTrue(self.fs.isfile("a.py"))
+        self.assertTrue(self.fs.isfile("foo/c.py"))
+        self.assertFalse(self.fs.isfile("foo/b.py"))
 
-  def testIsDir(self):
-      self.assertTrue(self.fs.isdir("foo"))
-      self.assertTrue(self.fs.isdir(""))
-      self.assertFalse(self.fs.isdir("foo/c.py"))
-      self.assertFalse(self.fs.isdir("a.py"))
+    def testIsDir(self):
+        self.assertTrue(self.fs.isdir("foo"))
+        self.assertTrue(self.fs.isdir(""))
+        self.assertFalse(self.fs.isdir("foo/c.py"))
+        self.assertFalse(self.fs.isdir("a.py"))
 
-  def testNoTrivialEmptyDir(self):
-      f = fs.StoredFileSystem({"foo/a.py": True, "bar/b.py": True})
-      self.assertTrue(f.isdir("foo"))
-      self.assertTrue(f.isdir("bar"))
-      self.assertFalse(f.isdir(""))
+    def testNoTrivialEmptyDir(self):
+        f = fs.StoredFileSystem({"foo/a.py": True, "bar/b.py": True})
+        self.assertTrue(f.isdir("foo"))
+        self.assertTrue(f.isdir("bar"))
+        self.assertFalse(f.isdir(""))
 
 
 class TestOSFileSystem(unittest.TestCase):
-  """Tests for OSFileSystem."""
+    """Tests for OSFileSystem."""
 
-  def setUp(self):
-      self.tempdir = utils.Tempdir()
-      self.tempdir.setup()
-      for f in FILES:
-          self.tempdir.create_file(f, FILES[f])
-      self.fs = fs.OSFileSystem(self.tempdir.path)
+    def setUp(self):
+        self.tempdir = utils.Tempdir()
+        self.tempdir.setup()
+        for f in FILES:
+            self.tempdir.create_file(f, FILES[f])
+        self.fs = fs.OSFileSystem(self.tempdir.path)
 
-  def tearDown(self):
-      self.tempdir.teardown()
+    def tearDown(self):
+        self.tempdir.teardown()
 
-  def testIsFile(self):
-      self.assertTrue(self.fs.isfile("a.py"))
-      self.assertTrue(self.fs.isfile("foo/c.py"))
-      self.assertFalse(self.fs.isfile("foo/b.py"))
+    def testIsFile(self):
+        self.assertTrue(self.fs.isfile("a.py"))
+        self.assertTrue(self.fs.isfile("foo/c.py"))
+        self.assertFalse(self.fs.isfile("foo/b.py"))
 
-  def testIsDir(self):
-      self.assertTrue(self.fs.isdir("foo"))
-      self.assertTrue(self.fs.isdir(""))
-      self.assertFalse(self.fs.isdir("foo/c.py"))
-      self.assertFalse(self.fs.isdir("a.py"))
+    def testIsDir(self):
+        self.assertTrue(self.fs.isdir("foo"))
+        self.assertTrue(self.fs.isdir(""))
+        self.assertFalse(self.fs.isdir("foo/c.py"))
+        self.assertFalse(self.fs.isdir("a.py"))
 
 
 class LowercasingFileSystem(fs.RemappingFileSystem):
