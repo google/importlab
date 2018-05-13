@@ -37,9 +37,6 @@ def parse_args():
     parser.add_argument('--unresolved', dest='unresolved', action='store_true',
                         default=False,
                         help='Display unresolved dependencies.')
-    parser.add_argument('--quiet', dest='quiet', action='store_true',
-                        default=False,
-                        help="Don't print errors to stdout.")
     parser.add_argument('-V', '--python_version', type=str, action='store',
                         dest='python_version', default='3.6',
                         help='Python version of target code, e.g. "2.7"')
