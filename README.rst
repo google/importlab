@@ -1,5 +1,5 @@
-importlab - https://github.com/google/importlab/
-------------------------------------------------
+importlab
+---------
 
 Importlab is a library for Python that automatically infers dependencies
 and calculates a dependency graph. It can perform dependency ordering of
@@ -18,6 +18,13 @@ Apache 2.0
 
 Installation
 ------------
+
+Importlab can be installed from pip
+
+::
+    pip install importlab
+
+To check out and install the latest source code
 
 ::
 
