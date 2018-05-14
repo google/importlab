@@ -22,6 +22,7 @@ Installation
 Importlab can be installed from pip
 
 ::
+
     pip install importlab
 
 To check out and install the latest source code
