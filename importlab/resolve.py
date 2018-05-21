@@ -14,6 +14,7 @@
 
 """Logic for resolving import paths."""
 
+import logging
 import os
 
 from . import import_finder
@@ -117,7 +118,7 @@ class Resolver:
             try:
                 yield self.resolve_import(import_item)
             except ImportException as err:
-                print('unknown module', err.module_name)
+                logging.info('unknown module %s', err.module_name)
 
 
 def show_import_tree(self, seen=None, indent=0):

@@ -208,7 +208,7 @@ class TestParsePy(unittest.TestCase):
             b'# -*- coding: iso-8859-1 -*-\n' +
             b'# Copyright (C) 1984 F' + chr(0xf6) + b'man\n'
         )
-        self.assertRaises(UnicodeDecodeError, unicode, src)
+        self.assertRaises(UnicodeDecodeError, unicode, src)  # noqa: F821
         self.assertEqual(self.parse(src), [])
 
 

@@ -15,6 +15,7 @@
 """Logic for resolving import paths."""
 
 import collections
+import logging
 import sys
 
 from . import import_finder
@@ -82,6 +83,8 @@ def get_imports(filename, python_version):
                 stdout = stdout.decode('ascii')
             imports = import_finder.read_imports(stdout)
         else:
-            print(stderr)
+            if sys.version_info[0] == 3:
+                stderr = stderr.decode('ascii')
+            logging.info(stderr)
             raise Exception('parse error for ' + filename)
     return [ImportStatement(*imp) for imp in imports]
