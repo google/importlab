@@ -122,7 +122,7 @@ def get_imports(filename):
     with open(filename, "rb") as f:
         src = f.read()
     finder = ImportFinder()
-    finder.visit(ast.parse(src))
+    finder.visit(ast.parse(src, filename=filename))
     imports = []
     for i in finder.imports:
         name, _, is_from, is_star = i
