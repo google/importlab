@@ -26,11 +26,45 @@ class ImportException(ImportError):
         self.module_name = module_name
 
 
-class ModuleAndDependencies(object):
-    def __init__(self, filename):
-        self.filename = filename
-        self.name, self.ext = os.path.splitext(os.path.basename(self.filename))
-        self.directory = os.path.dirname(self.filename)
+class ResolvedFile(object):
+    def __init__(self, path):
+        self.path = path
+
+    def is_extension(self):
+        return self.path.endswith('.so')
+
+
+class Direct(ResolvedFile):
+    """Files added directly as arguments."""
+    pass
+
+
+class Builtin(ResolvedFile):
+    """Imports that are resolved via python's builtins."""
+
+    def is_extension(self):
+        return True
+
+
+class System(ResolvedFile):
+    """Imports that are resolved by python."""
+    def __init__(self, path, import_item):
+        super(System, self).__init__(path)
+        self.import_item = import_item
+
+
+class Local(ResolvedFile):
+    """Imports that are found in a local pythonpath."""
+    def __init__(self, path, fs):
+        super(Local, self).__init__(path)
+        self.fs = fs
+
+
+class Relative(ResolvedFile):
+    """Imports that are found relative to another file."""
+    def __init__(self, path, from_path):
+        super(Relative, self).__init__(path)
+        self.from_path = from_path
 
 
 def convert_to_path(name):
@@ -56,7 +90,7 @@ class Resolver:
         py = name + '.py'
         for x in [init, py]:
             if fs.isfile(x):
-                return fs.refer_to(x)
+                return x
         return None
 
     def resolve_import(self, item):
@@ -78,7 +112,8 @@ class Resolver:
         name = item.name
 
         if import_finder.is_builtin(name):
-            return name + '.so'
+            filename = name + '.so'
+            return Builtin(filename)
 
         filename = convert_to_path(name)
         if item.is_relative():
@@ -95,7 +130,10 @@ class Resolver:
             f = (self._find_file(fs, filename) or
                  (short_name and self._find_file(fs, short_name)))
             if f:
-                return f
+                if item.is_relative():
+                    return Relative(f, self.current_filename)
+                else:
+                    return Local(f, fs)
 
         # If the module isn't found in the explicit pythonpath, see if python
         # itself resolved it.
@@ -104,8 +142,8 @@ class Resolver:
             if ext == '.pyc':
                 pyfile = prefix + '.py'
                 if os.path.exists(pyfile):
-                    return pyfile
-            return item.source
+                    return System(pyfile, item)
+            return System(item.source, item)
 
         raise ImportException(name)
 
@@ -119,18 +157,3 @@ class Resolver:
                 yield self.resolve_import(import_item)
             except ImportException as err:
                 logging.info('unknown module %s', err.module_name)
-
-
-def show_import_tree(self, seen=None, indent=0):
-    seen = seen or set()
-    for imported in self._get_imports():
-        if imported.name in seen:
-            continue
-        seen.add(imported.name)
-        try:
-            mod = self.resolve_import(imported.name)
-            print(' '*(indent*4) + str(imported))
-            mod.show_import_tree(seen, indent+1)
-        except ImportException:
-            # mark import we didn't find with '!'
-            print(' '*(indent*4) + '!' + str(imported))

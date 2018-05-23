@@ -59,6 +59,14 @@ def makedirs(path):
             raise
 
 
+def get_parent_directory(filenames):
+    """Get the common parent directory of a file tree."""
+    prefix = os.path.commonprefix(filenames)
+    if not os.path.isdir(prefix):
+        prefix = os.path.dirname(prefix)
+    return prefix
+
+
 class Tempdir(object):
     """Context handler for creating temporary directories."""
 
