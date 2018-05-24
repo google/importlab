@@ -1,8 +1,10 @@
 from __future__ import print_function
 
 import networkx as nx
+import os
 
 from . import graph
+from . import resolve
 
 
 def inspect_graph(import_graph):
@@ -16,6 +18,38 @@ def inspect_graph(import_graph):
             print('  %s -> <%s>' % (k, value))
 
 
+def format_file_node(import_graph, node, indent):
+    """Prettyprint nodes based on their provenance."""
+    f = import_graph.provenance[node]
+    if isinstance(f, resolve.Direct):
+      out = f.path
+    elif isinstance(f, resolve.Local):
+      out = os.path.relpath(f.path, f.fs.path)
+    elif isinstance(f, resolve.Relative):
+      # TODO(martindemello): Format depending on provenance[f.from_path]
+      out = '. ' + os.path.relpath(f.path, os.path.dirname(f.from_path))
+    elif isinstance(f, resolve.System):
+        out = ':: ' + f.import_item.name
+    elif isinstance(f, resolve.Builtin):
+        out = '(%s)' % f.path
+    else:
+        out = '%r' % node
+    return '  '*indent + out
+
+
+def format_node(import_graph, node, indent):
+    """Helper function for print_tree"""
+    if isinstance(node, (graph.Cycle, graph.NodeSet)):
+        ind = '  ' * indent
+        out = [ind + 'cycle {'] + [
+                format_file_node(import_graph, n, indent + 1)
+                for n in node.nodes
+        ] + [ind + '}']
+        return '\n'.join(out)
+    else:
+        return format_file_node(import_graph, node, indent)
+
+
 def print_tree(import_graph):
     def _print_tree(root, indent=0):
         if root in seen:
@@ -23,7 +57,7 @@ def print_tree(import_graph):
         if not graph.is_source_node(root):
             return
         seen.add(root)
-        print('  '*indent + import_graph.format(root))
+        print(format_node(import_graph, root, indent))
         for _, v in import_graph.graph.out_edges([root]):
             _print_tree(v, indent=indent+2)
 
