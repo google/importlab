@@ -46,11 +46,11 @@ class FakeImportGraph(graph.DependencyGraph):
 
 SIMPLE_DEPS = {
         "a.py": (["b.py", "c.py"], [],
-                 {"b.py": resolve.Local("b.py", "fs1"),
-                  "c.py": resolve.Local("c.py", "fs2")
+                 {"b.py": resolve.Local("b.py", "b", "fs1"),
+                  "c.py": resolve.Local("c.py", "c", "fs2")
                   }),
         "b.py": (["d.py"], ["e"],
-                 {"d.py": resolve.System("d.py", "d.py")})
+                 {"d.py": resolve.System("d.py", "d")})
 }
 
 SIMPLE_CYCLIC_DEPS = {

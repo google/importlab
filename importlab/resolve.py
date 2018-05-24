@@ -17,6 +17,7 @@
 import logging
 import os
 
+from . import fs
 from . import import_finder
 
 
@@ -27,16 +28,34 @@ class ImportException(ImportError):
 
 
 class ResolvedFile(object):
-    def __init__(self, path):
+    def __init__(self, path, module_name):
         self.path = path
+        self.module_name = module_name
 
     def is_extension(self):
         return self.path.endswith('.so')
 
+    @property
+    def short_path(self):
+        # TODO: We really need to know the module name of the including file
+        # (which is not always available at this point) to correctly compute
+        # this for relative imports. However, this is why we do not cache this
+        # in a member variable - callers should be able to set self.module_name
+        # based on the parent file, and then have short_path work correctly.
+        parts = self.path.split(os.path.sep)
+        n = self.module_name.count('.')
+        if parts[-1] == '__init__.py':
+            n += 1
+        parts = parts[-(n+1):]
+        return os.path.join(*parts)
+
 
 class Direct(ResolvedFile):
     """Files added directly as arguments."""
-    pass
+    def __init__(self, path, module_name=''):
+        # We do not necessarily have a module name for a directly added file.
+        # TODO(martindemello): Should we try to infer one from pythonpath?
+        super(Direct, self).__init__(path, module_name)
 
 
 class Builtin(ResolvedFile):
@@ -47,23 +66,19 @@ class Builtin(ResolvedFile):
 
 class System(ResolvedFile):
     """Imports that are resolved by python."""
-    def __init__(self, path, import_item):
-        super(System, self).__init__(path)
-        self.import_item = import_item
+    pass
 
 
 class Local(ResolvedFile):
     """Imports that are found in a local pythonpath."""
-    def __init__(self, path, fs):
-        super(Local, self).__init__(path)
+    def __init__(self, path, module_name, fs):
+        super(Local, self).__init__(path, module_name)
         self.fs = fs
 
 
 class Relative(ResolvedFile):
     """Imports that are found relative to another file."""
-    def __init__(self, path, from_path):
-        super(Relative, self).__init__(path)
-        self.from_path = from_path
+    pass
 
 
 def convert_to_path(name):
@@ -74,8 +89,10 @@ def convert_to_path(name):
         prefix = '../'*(dot_count-1)
     else:
         remainder = name
+        dot_count = 0
         prefix = ''
-    return prefix + os.path.join(*remainder.split('.'))
+    filename = prefix + os.path.join(*remainder.split('.'))
+    return (filename, dot_count)
 
 
 class Resolver:
@@ -112,27 +129,32 @@ class Resolver:
 
         if import_finder.is_builtin(name):
             filename = name + '.so'
-            return Builtin(filename)
+            return Builtin(filename, name)
 
-        filename = convert_to_path(name)
-        if item.is_relative():
+
+        filename, level = convert_to_path(name)
+        if level:
+            # This is a relative import; we need to resolve the filename
+            # relative to the importing file path.
             filename = os.path.normpath(
                 os.path.join(self.current_directory, filename))
 
         # The last part in `from a.b.c import d` might be a symbol rather than a
         # module, so we try both a/b/c/d.py and a/b/c.py
-        short_name = None
+        files = [(name, filename)]
         if item.is_from:
-            short_name = os.path.dirname(filename)
+            short_filename = os.path.dirname(filename)
+            short_name = name[:name.rfind('.')]
+            files.append((short_name, short_filename))
 
         for fs in self.fs_path:
-            f = (self._find_file(fs, filename) or
-                 (short_name and self._find_file(fs, short_name)))
-            if f:
-                if item.is_relative():
-                    return Relative(f, self.current_filename)
-                else:
-                    return Local(f, fs)
+            for module_name, path in files:
+                f = self._find_file(fs, path)
+                if f:
+                    if item.is_relative():
+                        return Relative(f, module_name)
+                    else:
+                        return Local(f, module_name, fs)
 
         # If the module isn't found in the explicit pythonpath, see if python
         # itself resolved it.
@@ -141,8 +163,8 @@ class Resolver:
             if ext == '.pyc':
                 pyfile = prefix + '.py'
                 if os.path.exists(pyfile):
-                    return System(pyfile, item)
-            return System(item.source, item)
+                    return System(pyfile, name)
+            return System(item.source, name)
 
         raise ImportException(name)
 

@@ -27,11 +27,11 @@ def format_file_node(import_graph, node, indent):
         out = os.path.relpath(f.path, f.fs.path)
     elif isinstance(f, resolve.Relative):
         # TODO(martindemello): Format depending on provenance[f.from_path]
-        out = '. ' + os.path.relpath(f.path, os.path.dirname(f.from_path))
+        out = '. ' + f.short_path
     elif isinstance(f, resolve.System):
-        out = ':: ' + f.import_item.name
+        out = ':: ' + f.short_path
     elif isinstance(f, resolve.Builtin):
-        out = '(%s)' % f.path
+        out = '(%s)' % f.module_name
     else:
         out = '%r' % node
     return '  '*indent + out
