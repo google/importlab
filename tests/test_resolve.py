@@ -1,6 +1,5 @@
 """Tests for resolve.py."""
 
-import os
 import unittest
 
 from importlab import fs

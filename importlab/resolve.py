@@ -41,7 +41,6 @@ class Direct(ResolvedFile):
 
 class Builtin(ResolvedFile):
     """Imports that are resolved via python's builtins."""
-
     def is_extension(self):
         return True
 

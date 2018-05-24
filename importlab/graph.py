@@ -84,7 +84,7 @@ class DependencyGraph(object):
         # add_file or add_file_recursive.
         self.sources = set()
         # provenance is a map of file path (as stored in the graph) to where the
-        # file was sourced from (see resolve.ResolvedImport)
+        # file was sourced from (see resolve.ResolvedFile)
         self.provenance = {}
 
     def get_file_deps(self, filename):

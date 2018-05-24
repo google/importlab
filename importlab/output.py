@@ -22,12 +22,12 @@ def format_file_node(import_graph, node, indent):
     """Prettyprint nodes based on their provenance."""
     f = import_graph.provenance[node]
     if isinstance(f, resolve.Direct):
-      out = f.path
+        out = f.path
     elif isinstance(f, resolve.Local):
-      out = os.path.relpath(f.path, f.fs.path)
+        out = os.path.relpath(f.path, f.fs.path)
     elif isinstance(f, resolve.Relative):
-      # TODO(martindemello): Format depending on provenance[f.from_path]
-      out = '. ' + os.path.relpath(f.path, os.path.dirname(f.from_path))
+        # TODO(martindemello): Format depending on provenance[f.from_path]
+        out = '. ' + os.path.relpath(f.path, os.path.dirname(f.from_path))
     elif isinstance(f, resolve.System):
         out = ':: ' + f.import_item.name
     elif isinstance(f, resolve.Builtin):
