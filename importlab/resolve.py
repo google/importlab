@@ -160,6 +160,13 @@ class Resolver:
         # itself resolved it.
         if item.source:
             prefix, ext = os.path.splitext(item.source)
+            # We need to check for importing a symbol here too.
+            if item.is_from:
+                components = item.name.split('.')
+                if (not prefix.endswith(components[-1]) and
+                    prefix.endswith(components[-2])):
+                    name = '.'.join(components[:-1])
+
             if ext == '.pyc':
                 pyfile = prefix + '.py'
                 if os.path.exists(pyfile):
