@@ -150,6 +150,30 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(f.path, "sys.so")
         self.assertEqual(f.module_name, "sys")
 
+    def testResolveStarImport(self):
+        # from foo.c import *
+        imp = parsepy.ImportStatement("foo.c", is_from=True, is_star=True)
+        r = resolve.Resolver(self.path, "x.py")
+        f = r.resolve_import(imp)
+        self.assertEqual(f.path, "foo/c.py")
+        self.assertEqual(f.module_name, "foo.c")
+
+    def testResolveStarImportBuiltin(self):
+        imp = parsepy.ImportStatement("sys", is_from=True, is_star=True)
+        r = resolve.Resolver(self.path, "x.py")
+        f = r.resolve_import(imp)
+        self.assertTrue(isinstance(f, resolve.Builtin))
+        self.assertEqual(f.path, "sys.so")
+        self.assertEqual(f.module_name, "sys")
+
+    def testResolveStarImportSystem(self):
+        imp = parsepy.ImportStatement("f", is_from=True, is_star=True,
+                                      source="/system/f.py")
+        r = resolve.Resolver(self.path, "x.py")
+        f = r.resolve_import(imp)
+        self.assertEqual(f.path, "/system/f.py")
+        self.assertEqual(f.module_name, "f")
+
 
 if __name__ == "__main__":
     unittest.main()

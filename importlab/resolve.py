@@ -142,7 +142,7 @@ class Resolver:
         # The last part in `from a.b.c import d` might be a symbol rather than a
         # module, so we try both a/b/c/d.py and a/b/c.py
         files = [(name, filename)]
-        if item.is_from:
+        if item.is_from and not item.is_star:
             short_filename = os.path.dirname(filename)
             short_name = name[:name.rfind('.')]
             files.append((short_name, short_filename))
@@ -161,7 +161,7 @@ class Resolver:
         if item.source:
             prefix, ext = os.path.splitext(item.source)
             # We need to check for importing a symbol here too.
-            if item.is_from:
+            if item.is_from and not item.is_star:
                 components = item.name.split('.')
                 if (not prefix.endswith(components[-1]) and
                     prefix.endswith(components[-2])):
