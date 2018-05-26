@@ -39,6 +39,7 @@ class ImportStatement(collections.namedtuple(
           be an element within a module, instead of a module itself. Happens
           e.g. for "from sys import argv".
           is_star: If this is an import of the form "from x import *".
+          source: The path to the file as resolved by python.
         Returns:
           A new ImportStatement instance.
         """

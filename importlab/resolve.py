@@ -17,7 +17,6 @@
 import logging
 import os
 
-from . import fs
 from . import import_finder
 
 
@@ -126,11 +125,15 @@ class Resolver:
             ImportException: If the module doesn't exist.
         """
         name = item.name
+        # The last part in `from a.b.c import d` might be a symbol rather than a
+        # module, so we try a.b.c and a.b.c.d as names.
+        short_name = None
+        if item.is_from and not item.is_star:
+            short_name = name[:name.rfind('.')]
 
         if import_finder.is_builtin(name):
             filename = name + '.so'
             return Builtin(filename, name)
-
 
         filename, level = convert_to_path(name)
         if level:
@@ -139,12 +142,9 @@ class Resolver:
             filename = os.path.normpath(
                 os.path.join(self.current_directory, filename))
 
-        # The last part in `from a.b.c import d` might be a symbol rather than a
-        # module, so we try both a/b/c/d.py and a/b/c.py
         files = [(name, filename)]
-        if item.is_from and not item.is_star:
+        if short_name:
             short_filename = os.path.dirname(filename)
-            short_name = name[:name.rfind('.')]
             files.append((short_name, short_filename))
 
         for fs in self.fs_path:
@@ -160,18 +160,18 @@ class Resolver:
         # itself resolved it.
         if item.source:
             prefix, ext = os.path.splitext(item.source)
+            mod_name = name
             # We need to check for importing a symbol here too.
-            if item.is_from and not item.is_star:
-                components = item.name.split('.')
-                if (not prefix.endswith(components[-1]) and
-                    prefix.endswith(components[-2])):
-                    name = '.'.join(components[:-1])
+            if short_name:
+                mod = prefix.replace(os.path.sep, '.')
+                if not mod.endswith(name) and mod.endswith(short_name):
+                    mod_name = short_name
 
             if ext == '.pyc':
                 pyfile = prefix + '.py'
                 if os.path.exists(pyfile):
-                    return System(pyfile, name)
-            return System(item.source, name)
+                    return System(pyfile, mod_name)
+            return System(item.source, mod_name)
 
         raise ImportException(name)
 
