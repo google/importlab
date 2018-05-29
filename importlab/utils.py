@@ -59,14 +59,6 @@ def makedirs(path):
             raise
 
 
-def get_parent_directory(filenames):
-    """Get the common parent directory of a file tree."""
-    prefix = os.path.commonprefix(filenames)
-    if not os.path.isdir(prefix):
-        prefix = os.path.dirname(prefix)
-    return prefix
-
-
 class Tempdir(object):
     """Context handler for creating temporary directories."""
 
@@ -118,3 +110,10 @@ class Tempdir(object):
     def __getitem__(self, filename):
         """Get the full path for an entry in this directory."""
         return os.path.join(self.path, filename)
+
+
+def strip_suffix(string, suffix):
+    """Remove a suffix from a string if it exists."""
+    if string.endswith(suffix):
+        return string[:-(len(suffix))]
+    return string

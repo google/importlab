@@ -18,6 +18,7 @@ import logging
 import os
 
 from . import import_finder
+from . import utils
 
 
 class ImportException(ImportError):
@@ -164,6 +165,7 @@ class Resolver:
             # We need to check for importing a symbol here too.
             if short_name:
                 mod = prefix.replace(os.path.sep, '.')
+                mod = utils.strip_suffix(mod, '.__init__')
                 if not mod.endswith(name) and mod.endswith(short_name):
                     mod_name = short_name
 
