@@ -3,6 +3,7 @@
 import unittest
 
 from importlab import graph
+from importlab import resolve
 
 
 class TestCycle(unittest.TestCase):
@@ -29,7 +30,7 @@ class FakeImportGraph(graph.DependencyGraph):
     def get_file_deps(self, filename):
         if filename in self.deps:
             return self.deps[filename]
-        return ([], [])
+        return ([], [], {})
 
     def ordered_deps_list(self):
         deps = []
@@ -41,17 +42,21 @@ class FakeImportGraph(graph.DependencyGraph):
         return [list(sorted(x)) for x in self.sorted_source_files()]
 
 
-# Deps = { file : ([resolved deps], [broken deps]) }
+# Deps = { file : ([resolved deps], [broken deps], {dep_file:provenance}) }
 
 SIMPLE_DEPS = {
-        "a.py": (["b.py", "c.py"], []),
-        "b.py": (["d.py"], ["e"])
-        }
+        "a.py": (["b.py", "c.py"], [],
+                 {"b.py": resolve.Local("b.py", "b", "fs1"),
+                  "c.py": resolve.Local("c.py", "c", "fs2")
+                  }),
+        "b.py": (["d.py"], ["e"],
+                 {"d.py": resolve.System("d.py", "d")})
+}
 
 SIMPLE_CYCLIC_DEPS = {
-        "a.py": (["b.py", "c.py"], ["e"]),
-        "b.py": (["d.py", "a.py"], ["f"]),
-        }
+        "a.py": (["b.py", "c.py"], ["e"], {}),
+        "b.py": (["d.py", "a.py"], ["f"], {}),
+}
 
 
 class TestImportGraph(unittest.TestCase):
@@ -77,6 +82,12 @@ class TestImportGraph(unittest.TestCase):
         sources = g.ordered_sorted_source_files()
         self.check_order(sources, ["d.py"], ["b.py"], ["a.py"])
         self.check_order(sources, ["c.py"], ["a.py"])
+        self.assertEqual(sorted(g.provenance.keys()),
+                         ["a.py", "b.py", "c.py", "d.py"])
+        # a.py is a directly added source
+        self.assertTrue(isinstance(g.provenance["a.py"], resolve.Direct))
+        # b.py came from fs1
+        self.assertEqual(g.provenance["b.py"].fs, "fs1")
 
     def test_simple_cycle(self):
         g = FakeImportGraph(SIMPLE_CYCLIC_DEPS)

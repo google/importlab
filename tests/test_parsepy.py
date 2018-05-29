@@ -130,10 +130,10 @@ class TestParsePy(unittest.TestCase):
       from a import *
       from a.b import *
       from a . b . c import *
-    """), [parsepy.ImportStatement(name='a', is_from=True, everything=True),
-           parsepy.ImportStatement(name='a.b', is_from=True, everything=True),
+    """), [parsepy.ImportStatement(name='a', is_from=True, is_star=True),
+           parsepy.ImportStatement(name='a.b', is_from=True, is_star=True),
            parsepy.ImportStatement(
-               name='a.b.c', is_from=True, everything=True)])
+               name='a.b.c', is_from=True, is_star=True)])
 
     def test_dot(self):
         self.assertEqual(self.parse("""
@@ -145,7 +145,7 @@ class TestParsePy(unittest.TestCase):
            parsepy.ImportStatement(name='.a.b', new_name='b', is_from=True),
            parsepy.ImportStatement(name='.a.b.c', new_name='c', is_from=True),
            parsepy.ImportStatement(
-               name='.a.b.c', is_from=True, everything=True)])
+               name='.a.b.c', is_from=True, is_star=True)])
 
     def test_dotdot(self):
         self.assertEqual(self.parse("""
@@ -157,12 +157,12 @@ class TestParsePy(unittest.TestCase):
            parsepy.ImportStatement(name='..a.b', new_name='b', is_from=True),
            parsepy.ImportStatement(name='..a.b.c', new_name='c', is_from=True),
            parsepy.ImportStatement(
-               name='..a.b.c', is_from=True, everything=True)])
+               name='..a.b.c', is_from=True, is_star=True)])
 
     def test_dotdotdot_asterisk(self):
         self.assertEqual(self.parse("""
       from ... import *
-    """), [parsepy.ImportStatement(name='...', is_from=True, everything=True)])
+    """), [parsepy.ImportStatement(name='...', is_from=True, is_star=True)])
 
     def test_dot_multiple(self):
         self.assertEqual(self.parse("""

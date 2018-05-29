@@ -24,10 +24,10 @@ from . import runner
 
 class ImportStatement(collections.namedtuple(
         'ImportStatement',
-        ['name', 'new_name', 'is_from', 'everything', 'source'])):
+        ['name', 'new_name', 'is_from', 'is_star', 'source'])):
     """A Python import statement, such as "import foo as bar"."""
 
-    def __new__(cls, name, new_name=None, is_from=False, everything=False,
+    def __new__(cls, name, new_name=None, is_from=False, is_star=False,
                 source=None):
         """Create a new ImportStatement.
 
@@ -38,18 +38,19 @@ class ImportStatement(collections.namedtuple(
           is_from: If the last part of the name (the "z" in "x.y.z") can
           be an element within a module, instead of a module itself. Happens
           e.g. for "from sys import argv".
-          everything: If this is an import of the form "from x import *".
+          is_star: If this is an import of the form "from x import *".
+          source: The path to the file as resolved by python.
         Returns:
           A new ImportStatement instance.
         """
         return super(ImportStatement, cls).__new__(
-            cls, name, new_name or name, is_from, everything, source)
+            cls, name, new_name or name, is_from, is_star, source)
 
     def is_relative(self):
         return self.name.startswith('.')
 
     def __str__(self):
-        if self.everything:
+        if self.is_star:
             assert self.name == self.new_name
             assert self.is_from
             return 'from ' + self.name + ' import *'

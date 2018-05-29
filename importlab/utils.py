@@ -110,3 +110,10 @@ class Tempdir(object):
     def __getitem__(self, filename):
         """Get the full path for an entry in this directory."""
         return os.path.join(self.path, filename)
+
+
+def strip_suffix(string, suffix):
+    """Remove a suffix from a string if it exists."""
+    if string.endswith(suffix):
+        return string[:-(len(suffix))]
+    return string

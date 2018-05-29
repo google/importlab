@@ -10,8 +10,7 @@ from . import parsepy
 class Cycle(object):
     """A cycle of nodes, some of which might be cycles."""
 
-    def __init__(self, edges, root=''):
-        self.root = root
+    def __init__(self, edges):
         self.edges = edges
         self.nodes = [x[0] for x in self.edges]
 
@@ -19,7 +18,7 @@ class Cycle(object):
         if isinstance(node, Cycle):
             return node.pp()
         else:
-            return os.path.relpath(node, self.root)
+            return node
 
     def flatten_nodes(self):
         out = []
@@ -44,17 +43,13 @@ class NodeSet(object):
     """The flattened version of a cycle - a set of mutually dependent files."""
 
     def __init__(self, cycle):
-        self.root = cycle.root
         self.nodes = cycle.flatten_nodes()
 
     def __contains__(self, v):
         return v in self.nodes
 
-    def _fmt(self, node):
-        return os.path.relpath(node, self.root)
-
     def pp(self):
-        return '[' + '->'.join([self._fmt(f) for f in self.nodes]) + ']'
+        return '[' + '->'.join([str(f) for f in self.nodes]) + ']'
 
     def __str__(self):
         return self.pp()
@@ -84,34 +79,46 @@ class DependencyGraph(object):
     def __init__(self):
         self.graph = nx.DiGraph()
         self.broken_deps = collections.defaultdict(set)
-        self.root = None
         self.final = False
+        # sources is a set of files directly added to the graph via
+        # add_file or add_file_recursive.
+        self.sources = set()
+        # provenance is a map of file path (as stored in the graph) to where the
+        # file was sourced from (see resolve.ResolvedFile)
+        self.provenance = {}
 
     def get_file_deps(self, filename):
         raise NotImplementedError()
+
+    def _add_source_file(self, filename):
+        self.sources.add(filename)
+        self.provenance[filename] = resolve.Direct(filename)
 
     def add_file(self, filename):
         """Add a file and all its immediate dependencies to the graph."""
 
         assert not self.final, 'Trying to mutate a final graph.'
-        resolved, unresolved = self.get_file_deps(filename)
+        self._add_source_file(filename)
+        resolved, unresolved, provenance = self.get_file_deps(filename)
         self.graph.add_node(filename)
         for f in resolved:
             self.graph.add_node(f)
             self.graph.add_edge(filename, f)
         for imp in unresolved:
             self.broken_deps[filename].add(imp)
+        self.provenance.update(provenance)
 
     def add_file_recursive(self, filename):
         """Add a file and all its recursive dependencies to the graph."""
 
         assert not self.final, 'Trying to mutate a final graph.'
+        self._add_source_file(filename)
         queue = collections.deque([filename])
         seen = set()
         while queue:
             filename = queue.popleft()
             self.graph.add_node(filename)
-            deps, broken = self.get_file_deps(filename)
+            deps, broken, provenance = self.get_file_deps(filename)
             for f in broken:
                 self.broken_deps[filename].add(f)
             for f in deps:
@@ -122,15 +129,7 @@ class DependencyGraph(object):
                     seen.add(f)
                 self.graph.add_node(f)
                 self.graph.add_edge(filename, f)
-
-    def find_root(self, recalculate=False):
-        if recalculate or not self.root:
-            keys = set(x[0] for x in self.graph.edges)
-            prefix = os.path.commonprefix(list(keys))
-            if not os.path.isdir(prefix):
-                prefix = os.path.dirname(prefix)
-            self.root = prefix
-        return self.root
+            self.provenance.update(provenance)
 
     def extract_cycle(self, cycle):
         assert not self.final, 'Trying to mutate a final graph.'
@@ -147,10 +146,10 @@ class DependencyGraph(object):
             self.graph.remove_node(node)
 
     def format(self, node):
-        prefix = self.find_root()
         if isinstance(node, (Cycle, NodeSet)):
             return node.pp()
-        return os.path.relpath(node, prefix)
+        else:
+            return node
 
     def inspect_graph(self):
         keys = set(x[0] for x in self.graph.edges)
@@ -168,10 +167,9 @@ class DependencyGraph(object):
         assert not self.final, 'Trying to mutate a final graph.'
 
         # Recursively extract cycles until the graph is cycle-free.
-        prefix = self.find_root()
         while True:
             try:
-                cycle = Cycle(nx.find_cycle(self.graph), prefix)
+                cycle = Cycle(nx.find_cycle(self.graph))
                 self.extract_cycle(cycle)
             except nx.NetworkXNoCycle:
                 break
@@ -254,11 +252,14 @@ class ImportGraph(DependencyGraph):
         r = resolve.Resolver(self.path, filename)
         resolved = []
         unresolved = []
+        provenance = {}
         for imp in parsepy.get_imports(filename, self.env.python_version):
             try:
                 f = r.resolve_import(imp)
-                if not f.endswith('.so'):
-                    resolved.append(os.path.abspath(f))
+                if not f.is_extension():
+                    full_path = os.path.abspath(f.path)
+                    resolved.append(full_path)
+                    provenance[full_path] = f
             except resolve.ImportException:
                 unresolved.append(imp)
-        return (resolved, unresolved)
+        return (resolved, unresolved, provenance)
