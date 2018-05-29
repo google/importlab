@@ -121,6 +121,10 @@ class TestPYIFileSystem(unittest.TestCase):
         self.assertFalse(self.fs.isdir("foo/c.py"))
         self.assertFalse(self.fs.isdir("a.py"))
 
+    def testFullPath(self):
+        self.assertEqual(self.fs.refer_to("foo/c.py"),
+                         self.tempdir["foo/c.pyi"])
+
 
 if __name__ == "__main__":
     unittest.main()

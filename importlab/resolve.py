@@ -105,7 +105,7 @@ class Resolver:
         py = name + '.py'
         for x in [init, py]:
             if fs.isfile(x):
-                return x
+                return fs.refer_to(x)
         return None
 
     def resolve_import(self, item):

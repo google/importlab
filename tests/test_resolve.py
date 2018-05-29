@@ -17,19 +17,26 @@ FILES = {
         "baz/__init__.py": "contents of init"
 }
 
+PYI_FILES = {
+        "x.pyi": "contents of x",
+        "y.pyi": "contents of y",
+}
+
 
 class TestResolver(unittest.TestCase):
     """Tests for Resolver."""
 
     def setUp(self):
-        self.path = [fs.StoredFileSystem(FILES)]
+        self.py_fs = fs.StoredFileSystem(FILES)
+        self.pyi_fs = fs.PYIFileSystem(fs.StoredFileSystem(PYI_FILES))
+        self.path = [self.pyi_fs, self.py_fs]
 
     def testResolveWithFilesystem(self):
         imp = parsepy.ImportStatement("a")
         r = resolve.Resolver(self.path, "b.py")
         f = r.resolve_import(imp)
         self.assertTrue(isinstance(f, resolve.Local))
-        self.assertEqual(f.fs, self.path[0])
+        self.assertEqual(f.fs, self.py_fs)
         self.assertEqual(f.path, "a.py")
         self.assertEqual(f.module_name, "a")
 
@@ -183,6 +190,15 @@ class TestResolver(unittest.TestCase):
         f = r.resolve_import(imp)
         self.assertEqual(f.path, "/system/f.py")
         self.assertEqual(f.module_name, "f")
+
+    def testResolvePyiFile(self):
+        imp = parsepy.ImportStatement("x")
+        r = resolve.Resolver(self.path, "b.py")
+        f = r.resolve_import(imp)
+        self.assertTrue(isinstance(f, resolve.Local))
+        self.assertEqual(f.fs, self.pyi_fs)
+        self.assertEqual(f.path, "x.pyi")
+        self.assertEqual(f.module_name, "x")
 
 
 if __name__ == "__main__":
