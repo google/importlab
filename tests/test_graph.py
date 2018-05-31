@@ -2,8 +2,11 @@
 
 import unittest
 
+from importlab import environment
+from importlab import fs
 from importlab import graph
 from importlab import resolve
+from importlab import utils
 
 
 class TestCycle(unittest.TestCase):
@@ -64,8 +67,8 @@ SIMPLE_CYCLIC_DEPS = {
 }
 
 
-class TestImportGraph(unittest.TestCase):
-    """Tests for ImportGraph."""
+class TestDependencyGraph(unittest.TestCase):
+    """Tests for DependencyGraph."""
 
     def check_order(self, xs, *args):
         """Checks that args form an increasing sequence within xs."""
@@ -108,6 +111,35 @@ class TestImportGraph(unittest.TestCase):
         sources = g.ordered_sorted_source_files()
         self.check_order(sources, ["d.py"], ["a.py", "b.py"])
         self.check_order(sources, ["c.py"], ["a.py", "b.py"])
+
+
+FILES = {
+        "foo/a.py": "from . import b",
+        "foo/b.py": "pass",
+        "x.py": "import foo.a"
+}
+
+
+class TestImportGraph(unittest.TestCase):
+    """Tests for ImportGraph."""
+
+    def setUp(self):
+        self.tempdir = utils.Tempdir()
+        self.tempdir.setup()
+        self.filenames = [
+            self.tempdir.create_file(f, FILES[f])
+            for f in FILES]
+        self.fs = fs.OSFileSystem(self.tempdir.path)
+        self.env = environment.Environment(fs.Path([self.fs]), (3, 6))
+
+    def tearDown(self):
+        self.tempdir.teardown()
+
+    def test_basic(self):
+        g = graph.ImportGraph.create(self.env, self.filenames)
+        self.assertEqual(
+                g.sorted_source_files(),
+                [[self.tempdir[x]] for x in ["foo/b.py", "foo/a.py", "x.py"]])
 
 
 if __name__ == "__main__":
