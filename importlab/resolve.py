@@ -36,6 +36,14 @@ class ResolvedFile(object):
         return self.path.endswith('.so')
 
     @property
+    def package_name(self):
+        f, _ = os.path.splitext(self.path)
+        if f.endswith('__init__'):
+            return self.module_name
+        else:
+            return self.module_name[:self.module_name.rfind('.')]
+
+    @property
     def short_path(self):
         # TODO: We really need to know the module name of the including file
         # (which is not always available at this point) to correctly compute
@@ -111,11 +119,11 @@ def infer_module_name(filename, fspath):
         return ''
 
 
-def get_absolute_name(parent, relative_name):
-    """Joins a parent module name and a relative name.
+def get_absolute_name(package, relative_name):
+    """Joins a package name and a relative name.
 
     Args:
-      parent: A dotted name, e.g. foo.bar.baz
+      package: A dotted name, e.g. foo.bar.baz
       relative_name: A dotted name with possibly some leading dots, e.g. ..x.y
 
     Returns:
@@ -125,15 +133,11 @@ def get_absolute_name(parent, relative_name):
       relative_name if it does not start with a dot
       None if the relative name has too many leading dots.
     """
-    prefix = parent[:parent.rfind('.')]
-    path = prefix.split('.') if prefix else []
+    path = package.split('.') if package else []
     name = relative_name.lstrip('.')
     ndots = len(relative_name) - len(name)
-    if ndots == 0 or ndots == len(path) + 1:
-        # If module foo.bar imports module ..baz.quux, return baz.quux
-        return name
     if ndots > len(path):
-      return None
+        return None
     prefix = ''.join([p + '.' for p in path[:len(path) + 1 - ndots]])
     return prefix + name
 
@@ -202,8 +206,7 @@ class Resolver:
                 if item.is_relative():
                     if self.current_module:
                         module_name = get_absolute_name(
-                                self.current_module.module_name,
-                                module_name)
+                                self.current_module.package_name, module_name)
                     # TODO(martindemello): If we do have a current_module,
                     # perhaps we should return a module of the same type as
                     # current_module rather than Relative.

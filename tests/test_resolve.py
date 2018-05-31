@@ -14,7 +14,8 @@ FILES = {
         "foo/c.py": "contents of c",
         "foo/d.py": "contents of d",
         "bar/e.py": "contents of e",
-        "baz/__init__.py": "contents of init"
+        "baz/__init__.py": "contents of init",
+        "baz/f.py": "contents of f"
 }
 
 PYI_FILES = {
@@ -78,6 +79,7 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(f.module_name, "bar.a")
 
     def testResolveSiblingPackageFile(self):
+        # Technically an invalid import, see comment on next test.
         imp = parsepy.ImportStatement("..bar.e")
         r = resolve.Resolver(self.path, "foo/d.py")
         f = r.resolve_import(imp)
@@ -85,13 +87,17 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(f.module_name, "..bar.e")
 
     def testResolveSiblingPackageFileWithModule(self):
+        # This is an invalid import, since we are trying to resolve a relative
+        # import beyond the top-level package. The file resolver does not figure
+        # out that we are moving beyond the top-level, but the relative module
+        # name qualifier does and fills in the module name as ''
         parent = resolve.System("foo/d.py", "foo.d")
         imp = parsepy.ImportStatement("..bar.e")
         r = resolve.Resolver(self.path, "foo/d.py", parent)
         f = r.resolve_import(imp)
         self.assertEqual(f.path, "bar/e.py")
         self.assertTrue(isinstance(f, resolve.Relative))
-        self.assertEqual(f.module_name, "bar.e")
+        self.assertEqual(f.module_name, "")
 
     def testResolveInitFile(self):
         imp = parsepy.ImportStatement("baz")
@@ -107,6 +113,15 @@ class TestResolver(unittest.TestCase):
         self.assertTrue(isinstance(f, resolve.Relative))
         self.assertEqual(f.path, "baz/__init__.py")
         self.assertEqual(f.module_name, "..baz")
+
+    def testResolveRelativeFromInitFileWithModule(self):
+        parent = resolve.Direct("baz/__init__.py", "baz")
+        imp = parsepy.ImportStatement(".f")
+        r = resolve.Resolver(self.path, "baz/__init__.py", parent)
+        f = r.resolve_import(imp)
+        self.assertTrue(isinstance(f, resolve.Relative))
+        self.assertEqual(f.path, "baz/f.py")
+        self.assertEqual(f.module_name, "baz.f")
 
     def testResolveModuleFromFile(self):
         # from foo import c
@@ -172,8 +187,8 @@ class TestResolver(unittest.TestCase):
         # Override a source pyc file with the corresponding py file if it exists
         # in the native filesystem.
         with utils.Tempdir() as d:
-            py_file = d.create_file('f.py')
-            pyc_file = d.create_file('f.pyc')
+            py_file = d.create_file("f.py")
+            pyc_file = d.create_file("f.pyc")
             imp = parsepy.ImportStatement("f", source=pyc_file)
             r = resolve.Resolver(self.path, "x.py")
             f = r.resolve_import(imp)
@@ -236,29 +251,29 @@ class TestResolverUtils(unittest.TestCase):
         with utils.Tempdir() as d:
             os_fs = fs.OSFileSystem(d.path)
             fspath = [os_fs]
-            py_file = d.create_file('foo/bar.py')
+            py_file = d.create_file("foo/bar.py")
             self.assertEqual(
                     resolve.infer_module_name(py_file, fspath),
-                    'foo.bar')
+                    "foo.bar")
             self.assertEqual(
-                    resolve.infer_module_name(py_file + 'i', fspath),
-                    '')
+                    resolve.infer_module_name(py_file + "i", fspath),
+                    "")
             self.assertEqual(
-                    resolve.infer_module_name(d['random/file'], fspath),
-                    '')
+                    resolve.infer_module_name(d["random/file"], fspath),
+                    "")
             self.assertEqual(
-                    resolve.infer_module_name(d['random/src.py'], fspath),
-                    'random.src')
+                    resolve.infer_module_name(d["random/src.py"], fspath),
+                    "random.src")
             self.assertEqual(
-                    resolve.infer_module_name('/some/random/file', fspath),
-                    '')
+                    resolve.infer_module_name("/some/random/file", fspath),
+                    "")
 
     def testGetAbsoluteName(self):
         test_cases = [
-                ("x.y", "a.b", "a.b"),
+                ("x.y", "a.b", "x.y.a.b"),
                 ("", "a.b", "a.b"),
-                ("x.y", ".a.b", "x.a.b"),
-                ("x.y", "..a.b", 'a.b'),
+                ("x.y", ".a.b", "x.y.a.b"),
+                ("x.y", "..a.b", "x.a.b"),
                 ("x.y", "...a.b", None),
         ]
         for parent, name, expected in test_cases:

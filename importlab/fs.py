@@ -153,8 +153,8 @@ class TarFileSystem(object):
 
 
 class Path(object):
-    def __init__(self, paths=[]):
-        self.paths = paths
+    def __init__(self, paths=None):
+        self.paths = paths if paths else []
 
     def add_path(self, path, kind='os'):
         if kind == 'os':
