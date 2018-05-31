@@ -27,10 +27,15 @@ class FakeImportGraph(graph.DependencyGraph):
         super(FakeImportGraph, self).__init__()
         self.deps = deps
 
+    def get_source_file_provenance(self, filename):
+        return resolve.Direct(filename, 'module.name')
+
     def get_file_deps(self, filename):
         if filename in self.deps:
-            return self.deps[filename]
-        return ([], [], {})
+            resolved, unresolved, provenance = self.deps[filename]
+            self.provenance.update(provenance)
+            return (resolved, unresolved)
+        return ([], [])
 
     def ordered_deps_list(self):
         deps = []
@@ -85,7 +90,9 @@ class TestImportGraph(unittest.TestCase):
         self.assertEqual(sorted(g.provenance.keys()),
                          ["a.py", "b.py", "c.py", "d.py"])
         # a.py is a directly added source
-        self.assertTrue(isinstance(g.provenance["a.py"], resolve.Direct))
+        provenance = g.provenance["a.py"]
+        self.assertTrue(isinstance(provenance, resolve.Direct))
+        self.assertEqual(provenance.module_name, 'module.name')
         # b.py came from fs1
         self.assertEqual(g.provenance["b.py"].fs, "fs1")
 

@@ -68,12 +68,30 @@ class TestResolver(unittest.TestCase):
         self.assertTrue(isinstance(f, resolve.Relative))
         self.assertEqual(f.module_name, "..a")
 
+    def testResolveParentPackageFileWithModule(self):
+        parent = resolve.System("foo/d.py", "bar.foo.d")
+        imp = parsepy.ImportStatement("..a")
+        r = resolve.Resolver(self.path, "foo/d.py", parent)
+        f = r.resolve_import(imp)
+        self.assertEqual(f.path, "a.py")
+        self.assertTrue(isinstance(f, resolve.Relative))
+        self.assertEqual(f.module_name, "bar.a")
+
     def testResolveSiblingPackageFile(self):
         imp = parsepy.ImportStatement("..bar.e")
         r = resolve.Resolver(self.path, "foo/d.py")
         f = r.resolve_import(imp)
         self.assertEqual(f.path, "bar/e.py")
         self.assertEqual(f.module_name, "..bar.e")
+
+    def testResolveSiblingPackageFileWithModule(self):
+        parent = resolve.System("foo/d.py", "foo.d")
+        imp = parsepy.ImportStatement("..bar.e")
+        r = resolve.Resolver(self.path, "foo/d.py", parent)
+        f = r.resolve_import(imp)
+        self.assertEqual(f.path, "bar/e.py")
+        self.assertTrue(isinstance(f, resolve.Relative))
+        self.assertEqual(f.module_name, "bar.e")
 
     def testResolveInitFile(self):
         imp = parsepy.ImportStatement("baz")
@@ -209,6 +227,44 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(f.fs, self.pyi_fs)
         self.assertEqual(f.path, "x.pyi")
         self.assertEqual(f.module_name, "x")
+
+
+class TestResolverUtils(unittest.TestCase):
+    """Tests for utility functions."""
+
+    def testInferModuleName(self):
+        with utils.Tempdir() as d:
+            os_fs = fs.OSFileSystem(d.path)
+            fspath = [os_fs]
+            py_file = d.create_file('foo/bar.py')
+            self.assertEqual(
+                    resolve.infer_module_name(py_file, fspath),
+                    'foo.bar')
+            self.assertEqual(
+                    resolve.infer_module_name(py_file + 'i', fspath),
+                    '')
+            self.assertEqual(
+                    resolve.infer_module_name(d['random/file'], fspath),
+                    '')
+            self.assertEqual(
+                    resolve.infer_module_name(d['random/src.py'], fspath),
+                    'random.src')
+            self.assertEqual(
+                    resolve.infer_module_name('/some/random/file', fspath),
+                    '')
+
+    def testGetAbsoluteName(self):
+        test_cases = [
+                ("x.y", "a.b", "a.b"),
+                ("", "a.b", "a.b"),
+                ("x.y", ".a.b", "x.a.b"),
+                ("x.y", "..a.b", 'a.b'),
+                ("x.y", "...a.b", None),
+        ]
+        for parent, name, expected in test_cases:
+            self.assertEqual(
+                    resolve.get_absolute_name(parent, name),
+                    expected)
 
 
 if __name__ == "__main__":

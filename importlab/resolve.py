@@ -54,7 +54,6 @@ class Direct(ResolvedFile):
     """Files added directly as arguments."""
     def __init__(self, path, module_name=''):
         # We do not necessarily have a module name for a directly added file.
-        # TODO(martindemello): Should we try to infer one from pythonpath?
         super(Direct, self).__init__(path, module_name)
 
 
@@ -95,10 +94,57 @@ def convert_to_path(name):
     return (filename, dot_count)
 
 
+def infer_module_name(filename, fspath):
+    """Convert a python filename to a module relative to pythonpath."""
+    filename, ext = os.path.splitext(filename)
+    if not ext == '.py':
+        return ''
+    for path in fspath:
+        root = getattr(path, 'root', None)
+        if not root:
+            continue
+        if filename.startswith(root):
+            short_name = filename[len(root) + 1:]
+            return short_name.replace(os.path.sep, '.')
+    else:
+        # We have not found filename relative to anywhere in pythonpath.
+        return ''
+
+
+def get_absolute_name(parent, relative_name):
+    """Joins a parent module name and a relative name.
+
+    Args:
+      parent: A dotted name, e.g. foo.bar.baz
+      relative_name: A dotted name with possibly some leading dots, e.g. ..x.y
+
+    Returns:
+      The relative name appended to the parent's package, after going up one
+      level for each leading dot.
+        e.g. foo.bar.baz + ..hello.world -> foo.hello.world
+      relative_name if it does not start with a dot
+      None if the relative name has too many leading dots.
+    """
+    prefix = parent[:parent.rfind('.')]
+    path = prefix.split('.') if prefix else []
+    name = relative_name.lstrip('.')
+    ndots = len(relative_name) - len(name)
+    if ndots == 0 or ndots == len(path) + 1:
+        # If module foo.bar imports module ..baz.quux, return baz.quux
+        return name
+    if ndots > len(path):
+      return None
+    prefix = ''.join([p + '.' for p in path[:len(path) + 1 - ndots]])
+    return prefix + name
+
+
 class Resolver:
-    def __init__(self, fs_path, current_filename):
+    def __init__(self, fs_path, current_filename, current_module=None):
+        if current_module:
+            assert isinstance(current_module, ResolvedFile)
         self.fs_path = fs_path
         self.current_filename = current_filename
+        self.current_module = current_module
         self.current_directory = os.path.dirname(current_filename)
 
     def _find_file(self, fs, name):
@@ -151,11 +197,19 @@ class Resolver:
         for fs in self.fs_path:
             for module_name, path in files:
                 f = self._find_file(fs, path)
-                if f:
-                    if item.is_relative():
-                        return Relative(f, module_name)
-                    else:
-                        return Local(f, module_name, fs)
+                if not f:
+                    continue
+                if item.is_relative():
+                    if self.current_module:
+                        module_name = get_absolute_name(
+                                self.current_module.module_name,
+                                module_name)
+                    # TODO(martindemello): If we do have a current_module,
+                    # perhaps we should return a module of the same type as
+                    # current_module rather than Relative.
+                    return Relative(f, module_name or '')
+                else:
+                    return Local(f, module_name, fs)
 
         # If the module isn't found in the explicit pythonpath, see if python
         # itself resolved it.
