@@ -22,7 +22,7 @@ def format_file_node(import_graph, node, indent):
     """Prettyprint nodes based on their provenance."""
     f = import_graph.provenance[node]
     if isinstance(f, resolve.Direct):
-        out = f.path
+        out = '+ ' + f.short_path
     elif isinstance(f, resolve.Local):
         out = os.path.relpath(f.path, f.fs.path)
     elif isinstance(f, resolve.Relative):
