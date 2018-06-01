@@ -36,12 +36,15 @@ class ResolvedFile(object):
         return self.path.endswith('.so')
 
     @property
+    def package_name(self):
+        f, _ = os.path.splitext(self.path)
+        if f.endswith('__init__'):
+            return self.module_name
+        else:
+            return self.module_name[:self.module_name.rfind('.')]
+
+    @property
     def short_path(self):
-        # TODO: We really need to know the module name of the including file
-        # (which is not always available at this point) to correctly compute
-        # this for relative imports. However, this is why we do not cache this
-        # in a member variable - callers should be able to set self.module_name
-        # based on the parent file, and then have short_path work correctly.
         parts = self.path.split(os.path.sep)
         n = self.module_name.count('.')
         if parts[-1] == '__init__.py':
@@ -54,7 +57,6 @@ class Direct(ResolvedFile):
     """Files added directly as arguments."""
     def __init__(self, path, module_name=''):
         # We do not necessarily have a module name for a directly added file.
-        # TODO(martindemello): Should we try to infer one from pythonpath?
         super(Direct, self).__init__(path, module_name)
 
 
@@ -76,11 +78,6 @@ class Local(ResolvedFile):
         self.fs = fs
 
 
-class Relative(ResolvedFile):
-    """Imports that are found relative to another file."""
-    pass
-
-
 def convert_to_path(name):
     """Converts ".module" to "./module", "..module" to "../module", etc."""
     if name.startswith('.'):
@@ -95,11 +92,47 @@ def convert_to_path(name):
     return (filename, dot_count)
 
 
+def infer_module_name(filename, fspath):
+    """Convert a python filename to a module relative to pythonpath."""
+    filename, ext = os.path.splitext(filename)
+    if not ext == '.py':
+        return ''
+    for f in fspath:
+        short_name = f.relative_path(filename)
+        if short_name:
+            return short_name.replace(os.path.sep, '.')
+    # We have not found filename relative to anywhere in pythonpath.
+    return ''
+
+
+def get_absolute_name(package, relative_name):
+    """Joins a package name and a relative name.
+
+    Args:
+      package: A dotted name, e.g. foo.bar.baz
+      relative_name: A dotted name with possibly some leading dots, e.g. ..x.y
+
+    Returns:
+      The relative name appended to the parent's package, after going up one
+        level for each leading dot.
+          e.g. foo.bar.baz + ..hello.world -> foo.hello.world
+      The unchanged relative_name if it does not start with a dot
+        or has too many leading dots.
+    """
+    path = package.split('.') if package else []
+    name = relative_name.lstrip('.')
+    ndots = len(relative_name) - len(name)
+    if ndots > len(path):
+        return relative_name
+    prefix = ''.join([p + '.' for p in path[:len(path) + 1 - ndots]])
+    return prefix + name
+
+
 class Resolver:
-    def __init__(self, fs_path, current_filename):
+    def __init__(self, fs_path, current_module):
         self.fs_path = fs_path
-        self.current_filename = current_filename
-        self.current_directory = os.path.dirname(current_filename)
+        self.current_module = current_module
+        self.current_directory = os.path.dirname(current_module.path)
 
     def _find_file(self, fs, name):
         init = os.path.join(name, '__init__.py')
@@ -151,11 +184,14 @@ class Resolver:
         for fs in self.fs_path:
             for module_name, path in files:
                 f = self._find_file(fs, path)
-                if f:
-                    if item.is_relative():
-                        return Relative(f, module_name)
-                    else:
-                        return Local(f, module_name, fs)
+                if not f:
+                    continue
+                if item.is_relative():
+                    module_name = get_absolute_name(
+                            self.current_module.package_name, module_name)
+                    if isinstance(self.current_module, System):
+                        return System(f, module_name)
+                return Local(f, module_name, fs)
 
         # If the module isn't found in the explicit pythonpath, see if python
         # itself resolved it.

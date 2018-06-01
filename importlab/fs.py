@@ -32,6 +32,14 @@ class FileSystem(with_metaclass(abc.ABCMeta, object)):
         """Get a fully qualified path for the given path."""
         pass
 
+    def relative_path(self, path):
+        """Return the relative path to `path`.
+
+        If this filesystem has a root directory, and path is within that
+        directory tree, return the relative path; otherwise return None.
+        """
+        return None
+
 
 class StoredFileSystem(FileSystem):
     """File system based on a file list."""
@@ -77,6 +85,11 @@ class OSFileSystem(FileSystem):
 
     def refer_to(self, path):
         return self._join(path)
+
+    def relative_path(self, path):
+        if path.startswith(self.root):
+            return path[len(self.root) + 1:]
+        return None
 
 
 class RemappingFileSystem(with_metaclass(abc.ABCMeta, FileSystem)):
@@ -153,8 +166,8 @@ class TarFileSystem(object):
 
 
 class Path(object):
-    def __init__(self):
-        self.paths = []
+    def __init__(self, paths=None):
+        self.paths = paths if paths else []
 
     def add_path(self, path, kind='os'):
         if kind == 'os':

@@ -90,35 +90,37 @@ class DependencyGraph(object):
     def get_file_deps(self, filename):
         raise NotImplementedError()
 
-    def _add_source_file(self, filename):
+    def add_source_file(self, filename):
         self.sources.add(filename)
-        self.provenance[filename] = resolve.Direct(filename)
+        self.provenance[filename] = self.get_source_file_provenance(filename)
+
+    def get_source_file_provenance(self, filename):
+        return resolve.Direct(filename)
 
     def add_file(self, filename):
         """Add a file and all its immediate dependencies to the graph."""
 
         assert not self.final, 'Trying to mutate a final graph.'
-        self._add_source_file(filename)
-        resolved, unresolved, provenance = self.get_file_deps(filename)
+        self.add_source_file(filename)
+        resolved, unresolved = self.get_file_deps(filename)
         self.graph.add_node(filename)
         for f in resolved:
             self.graph.add_node(f)
             self.graph.add_edge(filename, f)
         for imp in unresolved:
             self.broken_deps[filename].add(imp)
-        self.provenance.update(provenance)
 
     def add_file_recursive(self, filename):
         """Add a file and all its recursive dependencies to the graph."""
 
         assert not self.final, 'Trying to mutate a final graph.'
-        self._add_source_file(filename)
+        self.add_source_file(filename)
         queue = collections.deque([filename])
         seen = set()
         while queue:
             filename = queue.popleft()
             self.graph.add_node(filename)
-            deps, broken, provenance = self.get_file_deps(filename)
+            deps, broken = self.get_file_deps(filename)
             for f in broken:
                 self.broken_deps[filename].add(f)
             for f in deps:
@@ -129,7 +131,6 @@ class DependencyGraph(object):
                     seen.add(f)
                 self.graph.add_node(f)
                 self.graph.add_edge(filename, f)
-            self.provenance.update(provenance)
 
     def extract_cycle(self, cycle):
         assert not self.final, 'Trying to mutate a final graph.'
@@ -248,18 +249,24 @@ class ImportGraph(DependencyGraph):
         import_graph.build()
         return import_graph
 
+    def get_source_file_provenance(self, filename):
+        """Infer the module name if possible."""
+        module_name = resolve.infer_module_name(filename, self.path)
+        return resolve.Direct(filename, module_name)
+
     def get_file_deps(self, filename):
-        r = resolve.Resolver(self.path, filename)
         resolved = []
         unresolved = []
-        provenance = {}
+        parent = self.provenance[filename]
+        r = resolve.Resolver(self.path, parent)
         for imp in parsepy.get_imports(filename, self.env.python_version):
             try:
                 f = r.resolve_import(imp)
-                if not f.is_extension():
-                    full_path = os.path.abspath(f.path)
-                    resolved.append(full_path)
-                    provenance[full_path] = f
+                if f.is_extension():
+                    continue
+                full_path = os.path.abspath(f.path)
+                resolved.append(full_path)
+                self.provenance[full_path] = f
             except resolve.ImportException:
                 unresolved.append(imp)
-        return (resolved, unresolved, provenance)
+        return (resolved, unresolved)

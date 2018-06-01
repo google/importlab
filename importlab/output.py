@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import networkx as nx
-import os
 
 from . import graph
 from . import resolve
@@ -22,12 +21,9 @@ def format_file_node(import_graph, node, indent):
     """Prettyprint nodes based on their provenance."""
     f = import_graph.provenance[node]
     if isinstance(f, resolve.Direct):
-        out = f.path
+        out = '+ ' + f.short_path
     elif isinstance(f, resolve.Local):
-        out = os.path.relpath(f.path, f.fs.path)
-    elif isinstance(f, resolve.Relative):
-        # TODO(martindemello): Format depending on provenance[f.from_path]
-        out = '. ' + f.short_path
+        out = '  ' + f.short_path
     elif isinstance(f, resolve.System):
         out = ':: ' + f.short_path
     elif isinstance(f, resolve.Builtin):

@@ -2,8 +2,11 @@
 
 import unittest
 
+from importlab import environment
+from importlab import fs
 from importlab import graph
 from importlab import resolve
+from importlab import utils
 
 
 class TestCycle(unittest.TestCase):
@@ -27,10 +30,15 @@ class FakeImportGraph(graph.DependencyGraph):
         super(FakeImportGraph, self).__init__()
         self.deps = deps
 
+    def get_source_file_provenance(self, filename):
+        return resolve.Direct(filename, 'module.name')
+
     def get_file_deps(self, filename):
         if filename in self.deps:
-            return self.deps[filename]
-        return ([], [], {})
+            resolved, unresolved, provenance = self.deps[filename]
+            self.provenance.update(provenance)
+            return (resolved, unresolved)
+        return ([], [])
 
     def ordered_deps_list(self):
         deps = []
@@ -59,8 +67,8 @@ SIMPLE_CYCLIC_DEPS = {
 }
 
 
-class TestImportGraph(unittest.TestCase):
-    """Tests for ImportGraph."""
+class TestDependencyGraph(unittest.TestCase):
+    """Tests for DependencyGraph."""
 
     def check_order(self, xs, *args):
         """Checks that args form an increasing sequence within xs."""
@@ -85,7 +93,9 @@ class TestImportGraph(unittest.TestCase):
         self.assertEqual(sorted(g.provenance.keys()),
                          ["a.py", "b.py", "c.py", "d.py"])
         # a.py is a directly added source
-        self.assertTrue(isinstance(g.provenance["a.py"], resolve.Direct))
+        provenance = g.provenance["a.py"]
+        self.assertTrue(isinstance(provenance, resolve.Direct))
+        self.assertEqual(provenance.module_name, 'module.name')
         # b.py came from fs1
         self.assertEqual(g.provenance["b.py"].fs, "fs1")
 
@@ -101,6 +111,35 @@ class TestImportGraph(unittest.TestCase):
         sources = g.ordered_sorted_source_files()
         self.check_order(sources, ["d.py"], ["a.py", "b.py"])
         self.check_order(sources, ["c.py"], ["a.py", "b.py"])
+
+
+FILES = {
+        "foo/a.py": "from . import b",
+        "foo/b.py": "pass",
+        "x.py": "import foo.a"
+}
+
+
+class TestImportGraph(unittest.TestCase):
+    """Tests for ImportGraph."""
+
+    def setUp(self):
+        self.tempdir = utils.Tempdir()
+        self.tempdir.setup()
+        self.filenames = [
+            self.tempdir.create_file(f, FILES[f])
+            for f in FILES]
+        self.fs = fs.OSFileSystem(self.tempdir.path)
+        self.env = environment.Environment(fs.Path([self.fs]), (3, 6))
+
+    def tearDown(self):
+        self.tempdir.teardown()
+
+    def test_basic(self):
+        g = graph.ImportGraph.create(self.env, self.filenames)
+        self.assertEqual(
+                g.sorted_source_files(),
+                [[self.tempdir[x]] for x in ["foo/b.py", "foo/a.py", "x.py"]])
 
 
 if __name__ == "__main__":
