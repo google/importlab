@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import networkx as nx
-import os
 
 from . import graph
 from . import resolve
