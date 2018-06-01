@@ -236,6 +236,20 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(f.path, "x.pyi")
         self.assertEqual(f.module_name, "x")
 
+    def testResolveSystemRelative(self):
+        with utils.Tempdir() as d:
+            os_fs = fs.OSFileSystem(d.path)
+            fspath = [os_fs]
+            py_file = d.create_file("foo/x.py")
+            py_file = d.create_file("foo/y.py")
+            imp = parsepy.ImportStatement(".y")
+            module = resolve.System(d["foo/x.py"], "foo.x")
+            r = resolve.Resolver(fspath, module)
+            f = r.resolve_import(imp)
+            self.assertEqual(f.path, d["foo/y.py"])
+            self.assertTrue(isinstance(f, resolve.System))
+            self.assertEqual(f.module_name, "foo.y")
+
 
 class TestResolverUtils(unittest.TestCase):
     """Tests for utility functions."""

@@ -24,7 +24,7 @@ def format_file_node(import_graph, node, indent):
     if isinstance(f, resolve.Direct):
         out = '+ ' + f.short_path
     elif isinstance(f, resolve.Local):
-        out = '  ' + os.path.relpath(f.path, f.fs.path)
+        out = '  ' + f.short_path
     elif isinstance(f, resolve.System):
         out = ':: ' + f.short_path
     elif isinstance(f, resolve.Builtin):

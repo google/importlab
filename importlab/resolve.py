@@ -189,6 +189,8 @@ class Resolver:
                 if item.is_relative():
                     module_name = get_absolute_name(
                             self.current_module.package_name, module_name)
+                    if isinstance(self.current_module, System):
+                        return System(f, module_name)
                 return Local(f, module_name, fs)
 
         # If the module isn't found in the explicit pythonpath, see if python
