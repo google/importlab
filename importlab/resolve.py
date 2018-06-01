@@ -45,11 +45,6 @@ class ResolvedFile(object):
 
     @property
     def short_path(self):
-        # TODO: We really need to know the module name of the including file
-        # (which is not always available at this point) to correctly compute
-        # this for relative imports. However, this is why we do not cache this
-        # in a member variable - callers should be able to set self.module_name
-        # based on the parent file, and then have short_path work correctly.
         parts = self.path.split(os.path.sep)
         n = self.module_name.count('.')
         if parts[-1] == '__init__.py':
@@ -83,11 +78,6 @@ class Local(ResolvedFile):
         self.fs = fs
 
 
-class Relative(ResolvedFile):
-    """Imports that are found relative to another file."""
-    pass
-
-
 def convert_to_path(name):
     """Converts ".module" to "./module", "..module" to "../module", etc."""
     if name.startswith('.'):
@@ -107,16 +97,12 @@ def infer_module_name(filename, fspath):
     filename, ext = os.path.splitext(filename)
     if not ext == '.py':
         return ''
-    for path in fspath:
-        root = getattr(path, 'root', None)
-        if not root:
-            continue
-        if filename.startswith(root):
-            short_name = filename[len(root) + 1:]
+    for f in fspath:
+        short_name = f.relative_path(filename)
+        if short_name:
             return short_name.replace(os.path.sep, '.')
-    else:
-        # We have not found filename relative to anywhere in pythonpath.
-        return ''
+    # We have not found filename relative to anywhere in pythonpath.
+    return ''
 
 
 def get_absolute_name(package, relative_name):
@@ -128,28 +114,25 @@ def get_absolute_name(package, relative_name):
 
     Returns:
       The relative name appended to the parent's package, after going up one
-      level for each leading dot.
-        e.g. foo.bar.baz + ..hello.world -> foo.hello.world
-      relative_name if it does not start with a dot
-      None if the relative name has too many leading dots.
+        level for each leading dot.
+          e.g. foo.bar.baz + ..hello.world -> foo.hello.world
+      The unchanged relative_name if it does not start with a dot
+        or has too many leading dots.
     """
     path = package.split('.') if package else []
     name = relative_name.lstrip('.')
     ndots = len(relative_name) - len(name)
     if ndots > len(path):
-        return None
+        return relative_name
     prefix = ''.join([p + '.' for p in path[:len(path) + 1 - ndots]])
     return prefix + name
 
 
 class Resolver:
-    def __init__(self, fs_path, current_filename, current_module=None):
-        if current_module:
-            assert isinstance(current_module, ResolvedFile)
+    def __init__(self, fs_path, current_module):
         self.fs_path = fs_path
-        self.current_filename = current_filename
         self.current_module = current_module
-        self.current_directory = os.path.dirname(current_filename)
+        self.current_directory = os.path.dirname(current_module.path)
 
     def _find_file(self, fs, name):
         init = os.path.join(name, '__init__.py')
@@ -204,15 +187,9 @@ class Resolver:
                 if not f:
                     continue
                 if item.is_relative():
-                    if self.current_module:
-                        module_name = get_absolute_name(
-                                self.current_module.package_name, module_name)
-                    # TODO(martindemello): If we do have a current_module,
-                    # perhaps we should return a module of the same type as
-                    # current_module rather than Relative.
-                    return Relative(f, module_name or '')
-                else:
-                    return Local(f, module_name, fs)
+                    module_name = get_absolute_name(
+                            self.current_module.package_name, module_name)
+                return Local(f, module_name, fs)
 
         # If the module isn't found in the explicit pythonpath, see if python
         # itself resolved it.

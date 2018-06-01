@@ -258,7 +258,7 @@ class ImportGraph(DependencyGraph):
         resolved = []
         unresolved = []
         parent = self.provenance[filename]
-        r = resolve.Resolver(self.path, filename, parent)
+        r = resolve.Resolver(self.path, parent)
         for imp in parsepy.get_imports(filename, self.env.python_version):
             try:
                 f = r.resolve_import(imp)
