@@ -40,8 +40,10 @@ class ResolvedFile(object):
         f, _ = os.path.splitext(self.path)
         if f.endswith('__init__'):
             return self.module_name
+        elif '.' in self.module_name:
+            return self.module_name[:self.module_name.rindex('.')]
         else:
-            return self.module_name[:self.module_name.rfind('.')]
+            return None
 
     @property
     def short_path(self):
@@ -187,8 +189,11 @@ class Resolver:
                 if not f:
                     continue
                 if item.is_relative():
-                    module_name = get_absolute_name(
-                            self.current_module.package_name, module_name)
+                    package_name = self.current_module.package_name
+                    if package_name is None:
+                        # Relative import in non-package
+                        raise ImportException(name)
+                    module_name = get_absolute_name(package_name, module_name)
                     if isinstance(self.current_module, System):
                         return System(f, module_name)
                 return Local(f, module_name, fs)
