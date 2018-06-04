@@ -250,6 +250,12 @@ class TestResolver(unittest.TestCase):
             self.assertTrue(isinstance(f, resolve.System))
             self.assertEqual(f.module_name, "foo.y")
 
+    def testResolveRelativeInNonPackage(self):
+        r = self.make_resolver("a.py", "a")
+        imp = parsepy.ImportStatement(".b", is_from=True)
+        with self.assertRaises(resolve.ImportException):
+            r.resolve_import(imp)
+
 
 class TestResolverUtils(unittest.TestCase):
     """Tests for utility functions."""
