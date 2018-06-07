@@ -13,7 +13,7 @@ URL = 'https://github.com/google/importlab'
 EMAIL = 'pytype-dev@google.com'
 AUTHOR = 'Google Inc.'
 REQUIRES_PYTHON = '>=2.7.0'
-VERSION = '0.1.1'
+VERSION = '0.2.0'
 
 REQUIRED = [
     'networkx',

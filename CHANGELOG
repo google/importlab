@@ -1,0 +1,13 @@
+Version 0.2 (2018-06-06)
+* Track file provenance for all imports
+* Don't allow relative imports in non-packages
+
+Version 0.1.1 (2018-05-14)
+* Import graph with cycle detection and topological sorting
+* Add a broken dependency checker
+* Importlab works under python 2.7 and python 3.5+
+* Invoke python to resolve imports from site packages
+* Remove dependencies on pytype and typeshed
+
+Version 0.1 (2017-11-17)
+* Initial import
