@@ -41,8 +41,7 @@ more python files as arguments, and generates an import graph, typically
 used to process files in dependency order.
 
 It is currently integrated into
-`pytype <https://github.com/google/pytype>`__ as part of the
-``pytype-all`` tool.
+`pytype <https://github.com/google/pytype>`__
 
 Command-line tool
 -----------------
