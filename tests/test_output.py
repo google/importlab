@@ -2,6 +2,8 @@
 
 import contextlib
 import io
+import six
+import sys
 import unittest
 
 from importlab import environment
@@ -18,6 +20,17 @@ FILES = {
         "y.py": "import sys",
         "z.py": "import unresolved"
 }
+
+
+# For Python 2 compatibility, since contextlib.redirect_stdout is 3-only.
+@contextlib.contextmanager
+def redirect_stdout(out):
+  old = sys.stdout
+  sys.stdout = out
+  try:
+    yield
+  finally:
+    sys.stdout = old
 
 
 class TestOutput(unittest.TestCase):
@@ -40,8 +53,8 @@ class TestOutput(unittest.TestCase):
         self.assertTrue(isinstance(val, str))
 
     def assertPrints(self, fn):
-        out = io.StringIO()
-        with contextlib.redirect_stdout(out):
+        out = six.StringIO()
+        with redirect_stdout(out):
             fn(self.graph)
         self.assertTrue(out.getvalue())
 

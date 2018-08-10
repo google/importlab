@@ -9,7 +9,9 @@ import json
 import os
 import sys
 
-if sys.version_info.major >= 3:
+# Pytype doesn't recognize the `major` attribute:
+# https://github.com/google/pytype/issues/127.
+if sys.version_info[0] >= 3:
     import importlib
 else:
     import imp
@@ -87,7 +89,9 @@ def _resolve_import(name):
     if name in sys.modules:
         return getattr(sys.modules[name], '__file__', name + '.so')
 
-    if sys.version_info.major >= 3:
+    # Pytype doesn't recognize the `major` attribute:
+    # https://github.com/google/pytype/issues/127.
+    if sys.version_info[0] >= 3:
         return _resolve_import_3(name)
     else:
         return _resolve_import_2(name)

@@ -1,7 +1,7 @@
 import collections
 import os
 
-import networkx as nx
+import networkx as nx  # pytype: disable=import-error
 
 from . import resolve
 from . import parsepy

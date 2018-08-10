@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import networkx as nx
+import networkx as nx  # pytype: disable=import-error
 
 from . import graph
 from . import resolve
