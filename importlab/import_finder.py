@@ -74,7 +74,7 @@ def _resolve_import_2(name):
 def _resolve_import_3(name):
     """Helper function for resolve_import."""
     try:
-        spec = importlib.util.find_spec(name)
+        spec = importlib.util.find_spec(name)  # pytype: disable=module-attr
         if spec:
             return spec.origin
     except AttributeError:

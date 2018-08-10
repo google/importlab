@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-import networkx as nx  # pytype: disable=import-error
+# Workaround for https://github.com/google/pytype/issues/128.
+import networkx as nx  # type: ignore
 
 from . import graph
 from . import resolve

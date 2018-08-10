@@ -4,7 +4,7 @@
 import io
 import os
 
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # pytype: disable=import-error
 
 # Package meta-data.
 NAME = 'importlab'
