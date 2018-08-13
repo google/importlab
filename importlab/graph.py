@@ -1,7 +1,8 @@
 import collections
 import os
 
-import networkx as nx  # pytype: disable=import-error
+# Workaround for https://github.com/google/pytype/issues/128.
+import networkx as nx  # type: ignore
 
 from . import resolve
 from . import parsepy

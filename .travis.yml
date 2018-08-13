@@ -23,7 +23,8 @@ install:
 
 # Use one long command so that the build will fail on the first error:
 # https://github.com/travis-ci/travis-ci/issues/1066.
+# Run pytype with the same host and target versions so that all of
+# importlab's dependencies are present.
 script: |
-  pytype -V2.7 . --exclude tests/ testdata/ &&
-  pytype -V3.6 . --exclude tests/ testdata/ &&
+  pytype -V$TRAVIS_PYTHON_VERSION . --exclude tests/ testdata/ &&
   ./tests/run_all.sh
