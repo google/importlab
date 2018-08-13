@@ -2,7 +2,9 @@ import abc
 import os
 import tarfile
 
-from six import with_metaclass
+# https://github.com/google/pytype/issues/128
+from six import with_metaclass  # pytype: disable=pyi-error
+# pytype: disable=ignored-abstractmethod
 
 
 class FileSystemError(Exception):
