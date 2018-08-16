@@ -64,7 +64,10 @@ def _resolve_import_2(name):
         path = None
     for part in parts[i:]:
         try:
-            spec = imp.find_module(part, path)
+            if path:
+                spec = imp.find_module(part, [path])
+            else:
+                spec = imp.find_module(part)
         except ImportError:
             return None
         path = spec[1]
