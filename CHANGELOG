@@ -1,3 +1,7 @@
+Version 0.2.1 (2018-08-16)
+* Add pytype and travis integration
+* Make all tests 2-and-3 compatible
+
 Version 0.2 (2018-06-06)
 * Track file provenance for all imports
 * Don't allow relative imports in non-packages
