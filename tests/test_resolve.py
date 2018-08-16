@@ -176,6 +176,18 @@ class TestResolver(unittest.TestCase):
         self.assertTrue(isinstance(f, resolve.System))
         self.assertEqual(f.module_name, "foo.bar")
 
+    def testResolveSystemPackageDir(self):
+        with utils.Tempdir() as d:
+            py_file = d.create_file("foo/__init__.py")
+            imp = parsepy.ImportStatement("foo",
+                                          source=d["foo"],
+                                          is_from=True)
+            r = self.make_resolver("x.py", "x")
+            f = r.resolve_import(imp)
+            self.assertTrue(isinstance(f, resolve.System))
+            self.assertEqual(f.module_name, "foo")
+            self.assertEqual(f.path, d["foo/__init__.py"])
+
     def testGetPyFromPycSource(self):
         # Override a source pyc file with the corresponding py file if it exists
         # in the native filesystem.

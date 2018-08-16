@@ -183,8 +183,8 @@ class Resolver:
             short_filename = os.path.dirname(filename)
             files.append((short_name, short_filename))
 
-        for fs in self.fs_path:
-            for module_name, path in files:
+        for module_name, path in files:
+            for fs in self.fs_path:
                 f = self._find_file(fs, path)
                 if not f:
                     continue
@@ -212,6 +212,10 @@ class Resolver:
 
             if ext == '.pyc':
                 pyfile = prefix + '.py'
+                if os.path.exists(pyfile):
+                    return System(pyfile, mod_name)
+            elif not ext:
+                pyfile = os.path.join(prefix, "__init__.py")
                 if os.path.exists(pyfile):
                     return System(pyfile, mod_name)
             return System(item.source, mod_name)
