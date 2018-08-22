@@ -78,7 +78,11 @@ class DependencyGraph(object):
 
     def __init__(self):
         self.graph = nx.DiGraph()
+        # import statements that did not resolve to python files.
         self.broken_deps = collections.defaultdict(set)
+        # files that were not syntactically valid python.
+        self.unreadable_files = set()
+        # once self.final is set the graph can no longer be modified.
         self.final = False
         # sources is a set of files directly added to the graph via
         # add_file or add_file_recursive.
@@ -120,7 +124,13 @@ class DependencyGraph(object):
         while queue:
             filename = queue.popleft()
             self.graph.add_node(filename)
-            deps, broken = self.get_file_deps(filename)
+            try:
+                deps, broken = self.get_file_deps(filename)
+            except parsepy.ParseError:
+                # We have found a dependency, but python couldn't parse it.
+                self.unreadable_files.add(filename)
+                self.graph.remove_node(filename)
+                continue
             for f in broken:
                 self.broken_deps[filename].add(f)
             for f in deps:

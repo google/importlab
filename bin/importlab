@@ -55,11 +55,19 @@ def main():
     if args.tree:
         print('Source tree:')
         output.print_tree(import_graph)
+        # If we have detected unreadable files, print them
+        if import_graph.unreadable_files:
+          print()
+          print('Unreadable files:')
+          output.print_unreadable_files(import_graph)
         sys.exit(0)
 
     if args.unresolved:
         print('Unresolved dependencies:')
         output.print_unresolved_dependencies(import_graph)
+        print()
+        print('Unreadable files:')
+        output.print_unreadable_files(import_graph)
         sys.exit(0)
 
     print('Nothing to do!')

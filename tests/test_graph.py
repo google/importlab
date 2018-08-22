@@ -5,6 +5,7 @@ import unittest
 from importlab import environment
 from importlab import fs
 from importlab import graph
+from importlab import parsepy
 from importlab import resolve
 from importlab import utils
 
@@ -26,14 +27,20 @@ class FakeImportGraph(graph.DependencyGraph):
     Also adds ordered_foo() wrappers around output methods to help in testing.
     """
 
-    def __init__(self, deps):
+    def __init__(self, deps, unreadable=None):
         super(FakeImportGraph, self).__init__()
         self.deps = deps
+        if unreadable:
+            self.unreadable = unreadable
+        else:
+            self.unreadable = set()
 
     def get_source_file_provenance(self, filename):
         return resolve.Direct(filename, 'module.name')
 
     def get_file_deps(self, filename):
+        if filename in self.unreadable:
+            raise parsepy.ParseError()
         if filename in self.deps:
             resolved, unresolved, provenance = self.deps[filename]
             self.provenance.update(provenance)
@@ -111,6 +118,29 @@ class TestDependencyGraph(unittest.TestCase):
         sources = g.ordered_sorted_source_files()
         self.check_order(sources, ["d.py"], ["a.py", "b.py"])
         self.check_order(sources, ["c.py"], ["a.py", "b.py"])
+
+    def test_unreadable(self):
+        g = FakeImportGraph(SIMPLE_DEPS, unreadable={"b.py"})
+        g.add_file_recursive("a.py")
+        g.build()
+        # We have pruned b from the graph because it's unreadable.
+        self.assertEqual(g.ordered_deps_list(), [
+            ("a.py", ["c.py"]),
+            ("c.py", []),
+        ])
+        sources = g.ordered_sorted_source_files()
+        self.check_order(sources, ["c.py"], ["a.py"])
+        # b.py is still in g.provenance because we resolved it to a filename.
+        self.assertEqual(sorted(g.provenance.keys()),
+                         ["a.py", "b.py", "c.py"])
+        self.assertEqual(g.unreadable_files, set(["b.py"]))
+
+    def test_unreadable_direct_source(self):
+        g = FakeImportGraph(SIMPLE_DEPS, unreadable={"a.py"})
+        g.add_file_recursive("a.py")
+        g.build()
+        # Original source file is unreadable, so return nothing.
+        self.assertEqual(g.ordered_deps_list(), [])
 
 
 FILES = {
