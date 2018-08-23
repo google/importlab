@@ -22,6 +22,11 @@ from . import import_finder
 from . import runner
 
 
+class ParseError(Exception):
+    """Error parsing a file with python."""
+    pass
+
+
 class ImportStatement(collections.namedtuple(
         'ImportStatement',
         ['name', 'new_name', 'is_from', 'is_star', 'source'])):
@@ -87,5 +92,5 @@ def get_imports(filename, python_version):
             if sys.version_info[0] == 3:
                 stderr = stderr.decode('ascii')
             logging.info(stderr)
-            raise Exception('parse error for ' + filename)
+            raise ParseError(filename)
     return [ImportStatement(*imp) for imp in imports]

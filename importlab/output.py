@@ -83,3 +83,16 @@ def formatted_deps_list(import_graph):
 def print_unresolved_dependencies(import_graph):
     for imp in sorted(import_graph.get_all_unresolved()):
         print(' ', imp.name)
+
+
+def print_unreadable_files(import_graph):
+    for f in sorted(import_graph.unreadable_files):
+        print(' ', f)
+
+
+def maybe_show_unreadable(import_graph):
+    """Only print an unreadable files section if nonempty."""
+    if import_graph.unreadable_files:
+      print()
+      print('Unreadable files:')
+      print_unreadable_files(import_graph)

@@ -55,11 +55,13 @@ def main():
     if args.tree:
         print('Source tree:')
         output.print_tree(import_graph)
+        output.maybe_show_unreadable(import_graph)
         sys.exit(0)
 
     if args.unresolved:
         print('Unresolved dependencies:')
         output.print_unresolved_dependencies(import_graph)
+        output.maybe_show_unreadable(import_graph)
         sys.exit(0)
 
     print('Nothing to do!')
