@@ -1,7 +1,6 @@
 """Tests for output.py."""
 
 import contextlib
-import io
 import six
 import sys
 import unittest
@@ -25,12 +24,12 @@ FILES = {
 # For Python 2 compatibility, since contextlib.redirect_stdout is 3-only.
 @contextlib.contextmanager
 def redirect_stdout(out):
-  old = sys.stdout
-  sys.stdout = out
-  try:
-    yield
-  finally:
-    sys.stdout = old
+    old = sys.stdout
+    sys.stdout = out
+    try:
+        yield
+    finally:
+        sys.stdout = old
 
 
 class TestOutput(unittest.TestCase):

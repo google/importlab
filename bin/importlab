@@ -25,12 +25,14 @@ import sys
 from importlab import environment
 from importlab import graph
 from importlab import output
+from importlab import utils
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('filenames', metavar='filename', type=str, nargs='*',
-                        help='input file(s)')
+    parser.add_argument('inputs', metavar='input', type=str, nargs='*',
+                        help=('Input files or directories. Directories will be '
+                              'recursively scanned for .py files'))
     parser.add_argument('--tree', dest='tree', action='store_true',
                         default=False,
                         help='Display import tree.')
@@ -49,8 +51,16 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    # Exit early if we don't have any output args.
+    if not (args.tree or args.unresolved):
+        print('Nothing to do!')
+        sys.exit(0)
+
+    args.inputs = utils.expand_source_files(args.inputs)
+    print('Reading %d files' % len(args.inputs))
     env = environment.create_from_args(args)
-    import_graph = graph.ImportGraph.create(env, args.filenames)
+    import_graph = graph.ImportGraph.create(env, args.inputs)
 
     if args.tree:
         print('Source tree:')
@@ -63,8 +73,6 @@ def main():
         output.print_unresolved_dependencies(import_graph)
         output.maybe_show_unreadable(import_graph)
         sys.exit(0)
-
-    print('Nothing to do!')
 
 
 if __name__ == "__main__":
