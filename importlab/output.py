@@ -90,3 +90,9 @@ def print_unreadable_files(import_graph):
         print(' ', f)
 
 
+def maybe_show_unreadable(import_graph):
+    """Only print an unreadable files section if nonempty."""
+    if import_graph.unreadable_files:
+      print()
+      print('Unreadable files:')
+      print_unreadable_files(import_graph)
