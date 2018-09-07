@@ -1,3 +1,7 @@
+Version 0.3 (2018-09-07)
+* Allow inputs to be directories as well as files
+* Deal gracefully with unreadable source files (e.g. py3 files in a py2 tree)
+
 Version 0.2.1 (2018-08-16)
 * Add pytype and travis integration
 * Make all tests 2-and-3 compatible
