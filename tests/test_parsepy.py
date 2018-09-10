@@ -211,6 +211,10 @@ class TestParsePy(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, unicode, src)  # noqa: F821
         self.assertEqual(self.parse(src), [])
 
+    def test_syntax_error(self):
+        with self.assertRaises(parsepy.ParseError):
+            self.parse("foo(]")
+
 
 if __name__ == '__main__':
     unittest.main()
