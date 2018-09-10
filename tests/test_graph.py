@@ -40,7 +40,7 @@ class FakeImportGraph(graph.DependencyGraph):
 
     def get_file_deps(self, filename):
         if filename in self.unreadable:
-            raise parsepy.ParseError(filename)
+            raise parsepy.ParseError()
         if filename in self.deps:
             resolved, unresolved, provenance = self.deps[filename]
             self.provenance.update(provenance)
