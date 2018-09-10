@@ -24,7 +24,11 @@ from . import runner
 
 class ParseError(Exception):
     """Error parsing a file with python."""
-    pass
+
+    def __init__(self, filename, msg=None):
+        self.filename = filename
+        self.msg = msg
+        super(ParseError, self).__init__(filename, msg)
 
 
 class ImportStatement(collections.namedtuple(
@@ -76,7 +80,10 @@ class ImportStatement(collections.namedtuple(
 def get_imports(filename, python_version):
     if python_version == sys.version_info[0:2]:
         # Invoke import_finder directly
-        imports = import_finder.get_imports(filename)
+        try:
+            imports = import_finder.get_imports(filename)
+        except Exception as e:
+            raise ParseError(filename, str(e))
     else:
         # Call the appropriate python version in a subprocess
         f = sys.modules['importlab.import_finder'].__file__
