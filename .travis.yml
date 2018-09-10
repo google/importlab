@@ -26,5 +26,5 @@ install:
 # Run pytype with the same host and target versions so that all of
 # importlab's dependencies are present.
 script: |
-  pytype -V$TRAVIS_PYTHON_VERSION . --exclude tests/ testdata/ &&
+  pytype -V$TRAVIS_PYTHON_VERSION --disable=pyi-error --exclude tests/ testdata/ -- . &&
   ./tests/run_all.sh
