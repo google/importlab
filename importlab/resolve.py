@@ -102,6 +102,8 @@ def infer_module_name(filename, fspath):
     for f in fspath:
         short_name = f.relative_path(filename)
         if short_name:
+            if short_name.endswith("/__init__"):
+                short_name = short_name[:short_name.rfind('/')]
             return short_name.replace(os.path.sep, '.')
     # We have not found filename relative to anywhere in pythonpath.
     return ''
