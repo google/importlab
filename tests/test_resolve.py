@@ -293,6 +293,15 @@ class TestResolverUtils(unittest.TestCase):
                     resolve.infer_module_name("/some/random/file", fspath),
                     "")
 
+    def testInferInitModuleName(self):
+        with utils.Tempdir() as d:
+            os_fs = fs.OSFileSystem(d.path)
+            fspath = [os_fs]
+            py_file = d.create_file("foo/__init__.py")
+            self.assertEqual(
+                    resolve.infer_module_name(py_file, fspath),
+                    "foo")
+
     def testGetAbsoluteName(self):
         test_cases = [
                 ("x.y", "a.b", "x.y.a.b"),
