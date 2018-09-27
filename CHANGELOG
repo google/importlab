@@ -1,3 +1,6 @@
+Version 0.3.1 (2018-09-27)
+* FIX: Strip __init__ from inferred module names
+
 Version 0.3 (2018-09-07)
 * Allow inputs to be directories as well as files
 * Deal gracefully with unreadable source files (e.g. py3 files in a py2 tree)
