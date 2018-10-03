@@ -63,6 +63,8 @@ def _resolve_import_2(name):
         path = [os.path.dirname(mod.__file__)]
       elif hasattr(mod, '__path__'):
         path = mod.__path__
+      else:
+        path = None
     else:
         path = None
     for part in parts[i:]:
