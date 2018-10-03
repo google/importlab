@@ -58,14 +58,17 @@ def _resolve_import_2(name):
     """Helper function for resolve_import."""
     parts = name.split('.')
     i, mod = _find_package(parts)
-    if mod and hasattr(mod, '__file__'):
-        path = os.path.dirname(mod.__file__)
+    if mod:
+      if hasattr(mod, '__file__'):
+        path = [os.path.dirname(mod.__file__)]
+      elif hasattr(mod, '__path__'):
+        path = mod.__path__
     else:
         path = None
     for part in parts[i:]:
         try:
             if path:
-                spec = imp.find_module(part, [path])
+                spec = imp.find_module(part, path)
             else:
                 spec = imp.find_module(part)
         except ImportError:
