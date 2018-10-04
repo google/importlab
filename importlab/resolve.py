@@ -189,7 +189,8 @@ class Resolver:
         for module_name, path in files:
             for fs in self.fs_path:
                 f = self._find_file(fs, path)
-                if not f:
+                if not f or f == self.current_module.path:
+                    # We cannot import a file from itself.
                     continue
                 if item.is_relative():
                     package_name = self.current_module.package_name
