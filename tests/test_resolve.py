@@ -166,6 +166,16 @@ class TestResolver(unittest.TestCase):
         self.assertTrue(isinstance(f, resolve.System))
         self.assertEqual(f.module_name, "foo.foo")
 
+    def testResolveSystemFileNameClash(self):
+        # `import a` in a.py should get the system a.py
+        sys_file = "/system/a.py"
+        imp = parsepy.ImportStatement("a", source=sys_file)
+        r = self.make_resolver("a.py", "a")
+        f = r.resolve_import(imp)
+        self.assertTrue(isinstance(f, resolve.System))
+        self.assertEqual(f.path, sys_file)
+        self.assertEqual(f.module_name, "a")
+
     def testResolveSystemInitFile(self):
         # from foo.foo import foo
         imp = parsepy.ImportStatement("foo.bar.X",
