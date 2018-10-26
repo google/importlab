@@ -5,6 +5,7 @@ import errno
 import logging
 import os
 import shutil
+import subprocess
 import tempfile
 import textwrap
 
@@ -156,3 +157,11 @@ def strip_suffix(string, suffix):
     if string.endswith(suffix):
         return string[:-(len(suffix))]
     return string
+
+
+def run_py_file(version, path, *args):
+    exe = 'python%d.%d' % version
+    args = [exe, path] + list(args)
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    return p.returncode, stdout, stderr

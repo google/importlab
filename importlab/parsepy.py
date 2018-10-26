@@ -19,7 +19,7 @@ import logging
 import sys
 
 from . import import_finder
-from . import runner
+from . import utils
 
 
 class ParseError(Exception):
@@ -78,7 +78,7 @@ def get_imports(filename, python_version):
         # Invoke import_finder directly
         try:
             imports = import_finder.get_imports(filename)
-        except Exception as e:
+        except Exception:
             raise ParseError(filename)
     else:
         # Call the appropriate python version in a subprocess
@@ -86,7 +86,7 @@ def get_imports(filename, python_version):
         if f.rsplit('.', 1)[-1] == 'pyc':
             # In host Python 2, importlab ships with .pyc files.
             f = f[:-1]
-        ret, stdout, stderr = runner.run_py_file(python_version, f, filename)
+        ret, stdout, stderr = utils.run_py_file(python_version, f, filename)
         if not ret:
             if sys.version_info[0] == 3:
                 stdout = stdout.decode('ascii')
