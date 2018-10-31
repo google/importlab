@@ -42,7 +42,7 @@ class ImportFinder(ast.NodeVisitor):
 
 
 def _find_package(parts):
-    """Helper function for _resolve_import_2."""
+    """Helper function for _resolve_import_versioned."""
     for i in range(len(parts), 0, -1):
         prefix = '.'.join(parts[0:i])
         if prefix in sys.modules:
@@ -54,55 +54,51 @@ def is_builtin(name):
     return name in sys.builtin_module_names or name.startswith("__future__")
 
 
-def _resolve_import_2(name):
-    """Helper function for resolve_import."""
-    parts = name.split('.')
-    i, mod = _find_package(parts)
-    if mod:
-        if hasattr(mod, '__file__'):
-            path = [os.path.dirname(mod.__file__)]
-        elif hasattr(mod, '__path__'):
-            path = mod.__path__
+# Pytype doesn't recognize the `major` attribute:
+# https://github.com/google/pytype/issues/127.
+if sys.version_info[0] < 3:
+    def _resolve_import_versioned(name):
+        """Python 2 helper function for resolve_import."""
+        parts = name.split('.')
+        i, mod = _find_package(parts)
+        if mod:
+            if hasattr(mod, '__file__'):
+                path = [os.path.dirname(mod.__file__)]
+            elif hasattr(mod, '__path__'):
+                path = mod.__path__
+            else:
+                path = None
         else:
             path = None
-    else:
-        path = None
-    for part in parts[i:]:
+        for part in parts[i:]:
+            try:
+                if path:
+                    spec = imp.find_module(part, path)
+                else:
+                    spec = imp.find_module(part)
+            except ImportError:
+                return None
+            path = spec[1]
+        return path
+else:
+    def _resolve_import_versioned(name):
+        """Python 3 helper function for resolve_import."""
         try:
-            if path:
-                spec = imp.find_module(part, path)
-            else:
-                spec = imp.find_module(part)
+            spec = importlib.util.find_spec(name)
+            if spec:
+                return spec.origin
+        except AttributeError:
+            pass
         except ImportError:
-            return None
-        path = spec[1]
-    return path
-
-
-def _resolve_import_3(name):
-    """Helper function for resolve_import."""
-    try:
-        spec = importlib.util.find_spec(name)  # pytype: disable=module-attr
-        if spec:
-            return spec.origin
-    except AttributeError:
-        pass
-    except ImportError:
-        pass
-    return None
+            pass
+        return None
 
 
 def _resolve_import(name):
     """Helper function for resolve_import."""
     if name in sys.modules:
         return getattr(sys.modules[name], '__file__', name + '.so')
-
-    # Pytype doesn't recognize the `major` attribute:
-    # https://github.com/google/pytype/issues/127.
-    if sys.version_info[0] >= 3:
-        return _resolve_import_3(name)
-    else:
-        return _resolve_import_2(name)
+    return _resolve_import_versioned(name)
 
 
 def resolve_import(name, is_from, is_star):
