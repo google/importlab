@@ -1,5 +1,6 @@
 """Tests for graph.py."""
 
+import contextlib
 import unittest
 
 from importlab import environment
@@ -73,6 +74,11 @@ SIMPLE_CYCLIC_DEPS = {
         "b.py": (["d.py", "a.py"], ["f"], {}),
 }
 
+SIMPLE_SYSTEM_DEPS = {
+        "a.py": (["b.py"], [], {"b.py": resolve.System("b.py", "b")}),
+        "b.py": (["c.py"], [], {"c.py": resolve.System("c.py", "c")}),
+}
+
 
 class TestDependencyGraph(unittest.TestCase):
     """Tests for DependencyGraph."""
@@ -118,6 +124,23 @@ class TestDependencyGraph(unittest.TestCase):
         sources = g.ordered_sorted_source_files()
         self.check_order(sources, ["d.py"], ["a.py", "b.py"])
         self.check_order(sources, ["c.py"], ["a.py", "b.py"])
+
+    def test_trim(self):
+        # Untrimmed g1 follows system module b to its dependency c.
+        g1 = FakeImportGraph(SIMPLE_SYSTEM_DEPS)
+        g1.add_file_recursive("a.py", trim=False)
+        g1.build()
+        self.assertEqual(g1.ordered_deps_list(), [
+            ("a.py", ["b.py"]),
+            ("b.py", ["c.py"]),
+            ("c.py", [])])
+        # Trimmed g2 stops at b.
+        g2 = FakeImportGraph(SIMPLE_SYSTEM_DEPS)
+        g2.add_file_recursive("a.py", trim=True)
+        g2.build()
+        self.assertEqual(g2.ordered_deps_list(), [
+            ("a.py", ["b.py"]),
+            ("b.py", [])])
 
     def test_unreadable(self):
         g = FakeImportGraph(SIMPLE_DEPS, unreadable={"b.py"})
@@ -170,6 +193,33 @@ class TestImportGraph(unittest.TestCase):
         self.assertEqual(
                 g.sorted_source_files(),
                 [[self.tempdir[x]] for x in ["foo/b.py", "foo/a.py", "x.py"]])
+
+    @contextlib.contextmanager
+    def patch_resolve_import(self):
+        """Patch resolve_import to always return a System file."""
+        resolve_import = resolve.Resolver.resolve_import
+
+        def mock_resolve_import(resolver_self, item):
+            resolved_file = resolve_import(resolver_self, item)
+            return resolve.System(resolved_file.path, resolved_file.module_name)
+
+        resolve.Resolver.resolve_import = mock_resolve_import
+        yield
+        resolve.Resolver.resolve_import = resolve_import
+
+    def test_trim(self):
+        sources = [self.tempdir["x.py"]]
+        with self.patch_resolve_import():
+            # Untrimmed g1 contains foo.b, the dep of system module foo.a.
+            g1 = graph.ImportGraph.create(self.env, sources, trim=False)
+            self.assertEqual(
+                g1.sorted_source_files(),
+                [[self.tempdir[x]] for x in ["foo/b.py", "foo/a.py", "x.py"]])
+            # Trimmed g2 stops at foo.a.
+            g2 = graph.ImportGraph.create(self.env, sources, trim=True)
+            self.assertEqual(
+                g2.sorted_source_files(),
+                [[self.tempdir[x]] for x in ["foo/a.py", "x.py"]])
 
 
 if __name__ == "__main__":
