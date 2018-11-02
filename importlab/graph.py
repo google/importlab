@@ -114,8 +114,22 @@ class DependencyGraph(object):
         for imp in unresolved:
             self.broken_deps[filename].add(imp)
 
-    def add_file_recursive(self, filename):
-        """Add a file and all its recursive dependencies to the graph."""
+    def follow_file(self, f, seen, trim):
+        """Whether to recurse into a file's dependencies."""
+        return (f not in self.graph.nodes and
+                f not in seen and
+                f.endswith('.py') and
+                (not trim or
+                 not isinstance(self.provenance[f],
+                                (resolve.Builtin, resolve.System))))
+
+    def add_file_recursive(self, filename, trim=False):
+        """Add a file and all its recursive dependencies to the graph.
+
+        Args:
+          filename: The name of the file.
+          trim: Whether to trim the dependencies of builtin and system files.
+        """
 
         assert not self.final, 'Trying to mutate a final graph.'
         self.add_source_file(filename)
@@ -134,9 +148,7 @@ class DependencyGraph(object):
             for f in broken:
                 self.broken_deps[filename].add(f)
             for f in deps:
-                if (f not in self.graph.nodes and
-                    f not in seen and
-                        f.endswith('.py')):
+                if self.follow_file(f, seen, trim):
                     queue.append(f)
                     seen.add(f)
                 self.graph.add_node(f)
@@ -242,12 +254,13 @@ class ImportGraph(DependencyGraph):
         self.major_version = env.python_version[0]
 
     @classmethod
-    def create(cls, env, filenames):
+    def create(cls, env, filenames, trim=False):
         """Create and return a final graph.
 
         Args:
           env: An environment.Environment object
           filenames: A list of filenames
+          trim: Whether to trim the dependencies of builtin and system files.
 
         Returns:
           An immutable ImportGraph with the recursive dependencies of all the
@@ -255,7 +268,7 @@ class ImportGraph(DependencyGraph):
         """
         import_graph = cls(env)
         for filename in filenames:
-            import_graph.add_file_recursive(os.path.abspath(filename))
+            import_graph.add_file_recursive(os.path.abspath(filename), trim)
         import_graph.build()
         return import_graph
 

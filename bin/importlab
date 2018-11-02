@@ -46,6 +46,10 @@ def parse_args():
                         dest='pythonpath', default='',
                         help=('Directories for reading dependencies - a list '
                               'of paths separated by "%s".') % os.pathsep)
+    parser.add_argument('--trim', dest='trim', action='store_true',
+                        default=False,
+                        help=('Trim the dependencies of builtin and system '
+                              'files.'))
     return parser.parse_args()
 
 
@@ -60,7 +64,7 @@ def main():
     args.inputs = utils.expand_source_files(args.inputs)
     print('Reading %d files' % len(args.inputs))
     env = environment.create_from_args(args)
-    import_graph = graph.ImportGraph.create(env, args.inputs)
+    import_graph = graph.ImportGraph.create(env, args.inputs, args.trim)
 
     if args.tree:
         print('Source tree:')
