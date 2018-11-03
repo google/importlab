@@ -1,3 +1,6 @@
+Version 0.4 (2018-11-02)
+* Add an option to trim the dependencies of builtin and system files.
+
 Version 0.3.1 (2018-09-27)
 * FIX: Strip __init__ from inferred module names
 
