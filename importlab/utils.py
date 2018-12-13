@@ -56,7 +56,10 @@ def collect_files(path, extension):
     out = []
     # glob would be faster (see PEP471) but python glob doesn't do **/*
     for root, _, files in os.walk(path):
-        out += [os.path.join(root, f) for f in files if f.endswith(extension)]
+        if extension is None:
+            out += [os.path.join(root, f) for f in files]
+        else:
+            out += [os.path.join(root, f) for f in files if f.endswith(extension)]
     return out
 
 
@@ -80,8 +83,7 @@ def expand_source_files(filenames, cwd=None):
             # If we have a directory, collect all the files within it.
             out += collect_files(f, ".*")
         else:
-            if f.endswith(".*"):
-                out.append(f)
+            out.append(f)
     return set(out)
 
 
