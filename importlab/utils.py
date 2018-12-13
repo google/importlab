@@ -66,22 +66,21 @@ def expand_source_files(filenames, cwd=None):
     This is a helper function for handling command line arguments that specify a
     list of source files and directories.
 
-    Any directories in filenames will be scanned recursively for .py files.
-    Any files that do not end with ".py" will be dropped.
+    Any directories in filenames will be scanned recursively for files.
 
     Args:
         filenames: A list of filenames to process.
         cwd: An optional working directory to expand relative paths
     Returns:
-        A set of full paths to .py files
+        A set of full paths to files
     """
     out = []
     for f in expand_paths(filenames, cwd):
         if os.path.isdir(f):
-            # If we have a directory, collect all the .py files within it.
-            out += collect_files(f, ".py")
+            # If we have a directory, collect all the files within it.
+            out += collect_files(f, ".*")
         else:
-            if f.endswith(".py"):
+            if f.endswith(".*"):
                 out.append(f)
     return set(out)
 
