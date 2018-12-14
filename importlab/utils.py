@@ -81,7 +81,7 @@ def expand_source_files(filenames, cwd=None):
     for f in expand_paths(filenames, cwd):
         if os.path.isdir(f):
             # If we have a directory, collect all the files within it.
-            out += collect_files(f, ".*")
+            out += collect_files(f, None)
         else:
             out.append(f)
     return set(out)
