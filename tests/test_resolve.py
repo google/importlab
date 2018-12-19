@@ -116,6 +116,16 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(f.path, "baz/f.py")
         self.assertEqual(f.module_name, "baz.f")
 
+    def testResolveRelativeSymbol(self):
+        # importing the Symbol object from baz/__init__.py while in baz/f.py
+        parent = resolve.Direct("baz/f.py", "baz.f")
+        imp = parsepy.ImportStatement(".Symbol", is_from=True)
+        r = resolve.Resolver(self.path, parent)
+        f = r.resolve_import(imp)
+        self.assertTrue(isinstance(f, resolve.Local))
+        self.assertEqual(f.path, "baz/__init__.py")
+        self.assertEqual(f.module_name, "baz")
+
     def testResolveModuleFromFile(self):
         # from foo import c
         imp = parsepy.ImportStatement("foo.c", is_from=True)
