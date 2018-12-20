@@ -73,7 +73,7 @@ def expand_source_files(filenames, cwd=None):
         filenames: A list of filenames to process.
         cwd: An optional working directory to expand relative paths
     Returns:
-        A set of full paths to .py files
+        A list of sorted full paths to .py files
     """
     out = []
     for f in expand_paths(filenames, cwd):
@@ -83,7 +83,7 @@ def expand_source_files(filenames, cwd=None):
         else:
             if f.endswith(".py"):
                 out.append(f)
-    return set(out)
+    return sorted(set(out))
 
 
 def split_version(version):

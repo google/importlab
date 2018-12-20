@@ -11,17 +11,6 @@ from importlab import resolve
 from importlab import utils
 
 
-class TestCycle(unittest.TestCase):
-    """Tests for Cycle."""
-
-    def test_flatten(self):
-        a = graph.Cycle([[1, 2], [2, 3], [3, 1]])
-        b = graph.Cycle([[4, 5], [5, 4]])
-        c = graph.Cycle([[a, 6], [6, b], [b, 7], [7, a]])
-        nodes = c.flatten_nodes()
-        self.assertEqual(sorted(nodes), [1, 2, 3, 4, 5, 6, 7])
-
-
 class FakeImportGraph(graph.DependencyGraph):
     """An ImportGraph with file imports stubbed out.
 
