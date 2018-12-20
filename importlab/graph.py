@@ -8,7 +8,7 @@ from . import parsepy
 
 
 class NodeSet(object):
-    """A stronly connected component - a set of mutually dependent files."""
+    """A strongly connected component - a set of mutually dependent files."""
 
     def __init__(self, nodes):
         self.nodes = sorted(nodes)
@@ -122,6 +122,21 @@ class DependencyGraph(object):
                 self.graph.add_node(f)
                 self.graph.add_edge(filename, f)
 
+    def shrink_to_node(self, scc):
+        """Shrink a strongly connected component into a node."""
+        assert not self.final, 'Trying to mutate a final graph.'
+        self.graph.add_node(scc)
+        edges = list(self.graph.edges)
+        for k, v in edges:
+            if k not in scc and v in scc:
+                self.graph.remove_edge(k, v)
+                self.graph.add_edge(k, scc)
+            elif k in scc and v not in scc:
+                self.graph.remove_edge(k, v)
+                self.graph.add_edge(scc, v)
+        for node in scc.nodes:
+            self.graph.remove_node(node)
+
     def format(self, node):
         if isinstance(node, NodeSet):
             return node.pp()
@@ -149,18 +164,7 @@ class DependencyGraph(object):
             if len(scc) == 1:
                 break
 
-            ns = NodeSet(scc)
-            self.graph.add_node(ns)
-            edges = list(self.graph.edges)
-            for k, v in edges:
-                if k not in ns and v in ns:
-                    self.graph.remove_edge(k, v)
-                    self.graph.add_edge(k, ns)
-                elif k in ns and v not in ns:
-                    self.graph.remove_edge(k, v)
-                    self.graph.add_edge(ns, v)
-            for node in ns.nodes:
-                self.graph.remove_node(node)
+            self.shrink_to_node(NodeSet(scc))
 
         self.final = True
 
