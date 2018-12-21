@@ -1,5 +1,11 @@
+Version 0.4.1 (2018-12-XX)
+* Support `from . import Symbol` style of relative imports
+* Set the default target Python version to the host version
+* Keep unreadable source files in the dependency graph
+* Allow non-.py files
+
 Version 0.4 (2018-11-02)
-* Add an option to trim the dependencies of builtin and system files.
+* Add an option to trim the dependencies of builtin and system files
 
 Version 0.3.1 (2018-09-27)
 * FIX: Strip __init__ from inferred module names
