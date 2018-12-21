@@ -73,7 +73,7 @@ if sys.version_info[0] < 3:
         for part in parts[i:]:
             try:
                 if path:
-                    spec = imp.find_module(part, path)
+                    spec = imp.find_module(part, [path])
                 else:
                     spec = imp.find_module(part)
             except ImportError:
