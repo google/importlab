@@ -39,8 +39,9 @@ def parse_args():
     parser.add_argument('--unresolved', dest='unresolved', action='store_true',
                         default=False,
                         help='Display unresolved dependencies.')
+    default_python_version = '%d.%d' % sys.version_info[:2]
     parser.add_argument('-V', '--python_version', type=str, action='store',
-                        dest='python_version', default='3.6',
+                        dest='python_version', default=default_python_version,
                         help='Python version of target code, e.g. "2.7"')
     parser.add_argument('-P', '--pythonpath', type=str, action='store',
                         dest='pythonpath', default='',
