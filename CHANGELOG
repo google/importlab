@@ -1,4 +1,4 @@
-Version 0.4.1 (2018-12-XX)
+Version 0.5 (2018-12-XX)
 * Support `from . import Symbol` style of relative imports
 * Set the default target Python version to the host version
 * Keep unreadable source files in the dependency graph

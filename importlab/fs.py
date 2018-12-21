@@ -125,11 +125,10 @@ class ExtensionRemappingFileSystem(RemappingFileSystem):
         self.extension = extension
 
     def map_path(self, path):
-        if self.underlying.isdir(path):
-            return path
-        else:
-            p, _ = os.path.splitext(path)
+        p, ext = os.path.splitext(path)
+        if ext == '.py':
             return p + '.' + self.extension
+        return path
 
 
 class PYIFileSystem(ExtensionRemappingFileSystem):
