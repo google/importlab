@@ -49,7 +49,10 @@ class TestOutput(unittest.TestCase):
         self.tempdir.teardown()
 
     def assertString(self, val):
-        self.assertTrue(isinstance(val, str))
+        if sys.version_info[0] == 3:
+            self.assertTrue(isinstance(val, str))
+        else:
+            self.assertTrue(isinstance(val, (str, unicode)))  # noqa: F821
 
     def assertPrints(self, fn):
         out = six.StringIO()
