@@ -118,7 +118,7 @@ class RemappingFileSystem(with_metaclass(abc.ABCMeta, FileSystem)):
 
 
 class ExtensionRemappingFileSystem(RemappingFileSystem):
-    """File system that remaps file extensions."""
+    """File system that remaps .py file extensions."""
 
     def __init__(self, underlying, extension):
         super(ExtensionRemappingFileSystem, self).__init__(underlying)
