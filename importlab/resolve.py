@@ -96,9 +96,7 @@ def convert_to_path(name):
 
 def infer_module_name(filename, fspath):
     """Convert a python filename to a module relative to pythonpath."""
-    filename, ext = os.path.splitext(filename)
-    if not ext == '.py':
-        return ''
+    filename, _ = os.path.splitext(filename)
     for f in fspath:
         short_name = f.relative_path(filename)
         if short_name:

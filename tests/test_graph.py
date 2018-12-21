@@ -26,7 +26,7 @@ class FakeImportGraph(graph.DependencyGraph):
             self.unreadable = set()
 
     def get_source_file_provenance(self, filename):
-        return resolve.Direct(filename, 'module.name')
+        return resolve.Direct(filename, "module.name")
 
     def get_file_deps(self, filename):
         if filename in self.unreadable:
@@ -57,6 +57,8 @@ SIMPLE_DEPS = {
         "b.py": (["d.py"], ["e"],
                  {"d.py": resolve.System("d.py", "d")})
 }
+
+SIMPLE_NONPY_DEPS = {"a.pyi": (["b.py"], [], {})}
 
 SIMPLE_CYCLIC_DEPS = {
         "a.py": (["b.py", "c.py"], ["e"], {}),
@@ -97,7 +99,7 @@ class TestDependencyGraph(unittest.TestCase):
         # a.py is a directly added source
         provenance = g.provenance["a.py"]
         self.assertTrue(isinstance(provenance, resolve.Direct))
-        self.assertEqual(provenance.module_name, 'module.name')
+        self.assertEqual(provenance.module_name, "module.name")
         # b.py came from fs1
         self.assertEqual(g.provenance["b.py"].fs, "fs1")
 
@@ -132,7 +134,7 @@ class TestDependencyGraph(unittest.TestCase):
             ("b.py", [])])
 
     def test_unreadable(self):
-        # Unreadable files are kept in the graph to give the caller
+        # Unreadable py files are kept in the graph to give the caller
         # flexibility on what to do with them.
         g = FakeImportGraph(SIMPLE_DEPS, unreadable={"b.py"})
         g.add_file_recursive("a.py")
@@ -149,12 +151,28 @@ class TestDependencyGraph(unittest.TestCase):
         self.assertEqual(g.unreadable_files, set(["b.py"]))
 
     def test_unreadable_direct_source(self):
-        # Unreadable files are kept in the graph to give the caller
+        # Unreadable py files are kept in the graph to give the caller
         # flexibility on what to do with them.
         g = FakeImportGraph(SIMPLE_DEPS, unreadable={"a.py"})
         g.add_file_recursive("a.py")
         g.build()
-        self.assertEqual(g.ordered_deps_list(), [('a.py', [])])
+        self.assertEqual(g.ordered_deps_list(), [("a.py", [])])
+
+    def test_readable_nonpy(self):
+        g = FakeImportGraph(SIMPLE_NONPY_DEPS)
+        g.add_file_recursive("a.pyi")
+        g.build()
+        self.assertEqual(g.ordered_deps_list(), [
+            ("a.pyi", ["b.py"]),
+            ("b.py", []),
+        ])
+
+    def test_unreadable_nonpy(self):
+        g = FakeImportGraph(SIMPLE_NONPY_DEPS, unreadable={"a.pyi"})
+        g.add_file_recursive("a.pyi")
+        g.build()
+        # Original source file is unreadable, so return nothing.
+        self.assertEqual(g.ordered_deps_list(), [])
 
 
 FILES = {

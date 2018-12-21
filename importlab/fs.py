@@ -118,17 +118,18 @@ class RemappingFileSystem(with_metaclass(abc.ABCMeta, FileSystem)):
 
 
 class ExtensionRemappingFileSystem(RemappingFileSystem):
-    """File system that remaps .py file extensions."""
+    """File system that remaps file extensions."""
 
     def __init__(self, underlying, extension):
         super(ExtensionRemappingFileSystem, self).__init__(underlying)
         self.extension = extension
 
     def map_path(self, path):
-        p, ext = os.path.splitext(path)
-        if ext == '.py':
+        if self.underlying.isdir(path):
+            return path
+        else:
+            p, _ = os.path.splitext(path)
             return p + '.' + self.extension
-        return path
 
 
 class PYIFileSystem(ExtensionRemappingFileSystem):
