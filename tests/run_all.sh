@@ -1,5 +1,5 @@
 # This script must be run from the directory above tests.
-set -e
+set -ev
 python -m tests.test_fs
 python -m tests.test_graph
 python -m tests.test_output
