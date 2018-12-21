@@ -109,9 +109,10 @@ class DependencyGraph(object):
             try:
                 deps, broken = self.get_file_deps(filename)
             except parsepy.ParseError:
-                # We have found a dependency, but python couldn't parse it.
+                # Python couldn't parse `filename`. We mark it as unreadable and
+                # keep the node in the graph so that importlab's callers can do
+                # their own syntax error handling if desired.
                 self.unreadable_files.add(filename)
-                self.graph.remove_node(filename)
                 continue
             for f in broken:
                 self.broken_deps[filename].add(f)

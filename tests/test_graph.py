@@ -132,27 +132,29 @@ class TestDependencyGraph(unittest.TestCase):
             ("b.py", [])])
 
     def test_unreadable(self):
+        # Unreadable files are kept in the graph to give the caller
+        # flexibility on what to do with them.
         g = FakeImportGraph(SIMPLE_DEPS, unreadable={"b.py"})
         g.add_file_recursive("a.py")
         g.build()
-        # We have pruned b from the graph because it's unreadable.
         self.assertEqual(g.ordered_deps_list(), [
-            ("a.py", ["c.py"]),
+            ("a.py", ["b.py", "c.py"]),
+            ("b.py", []),
             ("c.py", []),
         ])
         sources = g.ordered_sorted_source_files()
         self.check_order(sources, ["c.py"], ["a.py"])
-        # b.py is still in g.provenance because we resolved it to a filename.
-        self.assertEqual(sorted(g.provenance.keys()),
+        self.assertEqual(sorted(g.provenance),
                          ["a.py", "b.py", "c.py"])
         self.assertEqual(g.unreadable_files, set(["b.py"]))
 
     def test_unreadable_direct_source(self):
+        # Unreadable files are kept in the graph to give the caller
+        # flexibility on what to do with them.
         g = FakeImportGraph(SIMPLE_DEPS, unreadable={"a.py"})
         g.add_file_recursive("a.py")
         g.build()
-        # Original source file is unreadable, so return nothing.
-        self.assertEqual(g.ordered_deps_list(), [])
+        self.assertEqual(g.ordered_deps_list(), [('a.py', [])])
 
 
 FILES = {
