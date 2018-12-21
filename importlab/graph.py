@@ -7,43 +7,11 @@ from . import resolve
 from . import parsepy
 
 
-class Cycle(object):
-    """A cycle of nodes, some of which might be cycles."""
-
-    def __init__(self, edges):
-        self.edges = edges
-        self.nodes = [x[0] for x in self.edges]
-
-    def _fmt(self, node):
-        if isinstance(node, Cycle):
-            return node.pp()
-        else:
-            return node
-
-    def flatten_nodes(self):
-        out = []
-        for n in self.nodes:
-            if isinstance(n, Cycle):
-                out.extend(n.flatten_nodes())
-            else:
-                out.append(n)
-        return out
-
-    def __contains__(self, v):
-        return v in self.nodes
-
-    def pp(self):
-        return 'Cycle(' + '->'.join([self._fmt(f) for f in self.nodes]) + ')'
-
-    def __str__(self):
-        return self.pp()
-
-
 class NodeSet(object):
-    """The flattened version of a cycle - a set of mutually dependent files."""
+    """A strongly connected component - a set of mutually dependent files."""
 
-    def __init__(self, cycle):
-        self.nodes = cycle.flatten_nodes()
+    def __init__(self, nodes):
+        self.nodes = sorted(nodes)
 
     def __contains__(self, v):
         return v in self.nodes
@@ -62,7 +30,7 @@ class NodeSet(object):
 
 
 def is_source_node(x):
-    return isinstance(x, (Cycle, NodeSet)) or x.endswith('.py')
+    return isinstance(x, NodeSet) or x.endswith('.py')
 
 
 class DependencyGraph(object):
@@ -154,22 +122,23 @@ class DependencyGraph(object):
                 self.graph.add_node(f)
                 self.graph.add_edge(filename, f)
 
-    def extract_cycle(self, cycle):
+    def shrink_to_node(self, scc):
+        """Shrink a strongly connected component into a node."""
         assert not self.final, 'Trying to mutate a final graph.'
-        self.graph.add_node(cycle)
+        self.graph.add_node(scc)
         edges = list(self.graph.edges)
         for k, v in edges:
-            if k not in cycle and v in cycle:
+            if k not in scc and v in scc:
                 self.graph.remove_edge(k, v)
-                self.graph.add_edge(k, cycle)
-            elif k in cycle and v not in cycle:
+                self.graph.add_edge(k, scc)
+            elif k in scc and v not in scc:
                 self.graph.remove_edge(k, v)
-                self.graph.add_edge(cycle, v)
-        for node in cycle.nodes:
+                self.graph.add_edge(scc, v)
+        for node in scc.nodes:
             self.graph.remove_node(node)
 
     def format(self, node):
-        if isinstance(node, (Cycle, NodeSet)):
+        if isinstance(node, NodeSet):
             return node.pp()
         else:
             return node
@@ -189,22 +158,14 @@ class DependencyGraph(object):
 
         assert not self.final, 'Trying to mutate a final graph.'
 
-        # Recursively extract cycles until the graph is cycle-free.
-        while True:
-            try:
-                cycle = Cycle(nx.find_cycle(self.graph))
-                self.extract_cycle(cycle)
-            except nx.NetworkXNoCycle:
+        # Replace each strongly connected component with a single node `NodeSet`
+        for scc in sorted(nx.kosaraju_strongly_connected_components(self.graph),
+                          key=len, reverse=True):
+            if len(scc) == 1:
                 break
 
-        # Now that we have reduced the graph to a tree, we can flatten cycle
-        # nodes into NodeSets
-        def transform_node(node):
-            if isinstance(node, Cycle):
-                return NodeSet(node)
-            else:
-                return node
-        self.graph = nx.relabel_nodes(self.graph, transform_node)
+            self.shrink_to_node(NodeSet(scc))
+
         self.final = True
 
     def sorted_source_files(self):

@@ -35,7 +35,7 @@ def format_file_node(import_graph, node, indent):
 
 def format_node(import_graph, node, indent):
     """Helper function for print_tree"""
-    if isinstance(node, (graph.Cycle, graph.NodeSet)):
+    if isinstance(node, graph.NodeSet):
         ind = '  ' * indent
         out = [ind + 'cycle {'] + [
                 format_file_node(import_graph, n, indent + 1)
