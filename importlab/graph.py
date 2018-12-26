@@ -29,10 +29,6 @@ class NodeSet(object):
         return self.nodes.__iter__()
 
 
-def is_source_node(x):
-    return isinstance(x, NodeSet) or x.endswith('.py')
-
-
 class DependencyGraph(object):
     """A set of file dependencies stored in a graph structure.
 
@@ -86,7 +82,6 @@ class DependencyGraph(object):
         """Whether to recurse into a file's dependencies."""
         return (f not in self.graph.nodes and
                 f not in seen and
-                f.endswith('.py') and
                 (not trim or
                  not isinstance(self.provenance[f],
                                 (resolve.Builtin, resolve.System))))
@@ -109,9 +104,14 @@ class DependencyGraph(object):
             try:
                 deps, broken = self.get_file_deps(filename)
             except parsepy.ParseError:
-                # We have found a dependency, but python couldn't parse it.
-                self.unreadable_files.add(filename)
-                self.graph.remove_node(filename)
+                # Python couldn't parse `filename`. If we're sure that it is a
+                # Python file, we mark it as unreadable and keep the node in the
+                # graph so importlab's callers can do their own syntax error
+                # handling if desired.
+                if filename.endswith('.py'):
+                    self.unreadable_files.add(filename)
+                else:
+                    self.graph.remove_node(filename)
                 continue
             for f in broken:
                 self.broken_deps[filename].add(f)
@@ -176,12 +176,9 @@ class DependencyGraph(object):
         for node in nx.topological_sort(self.graph):
             if isinstance(node, NodeSet):
                 out.append(node.nodes)
-            elif node.endswith('.py'):
+            else:
                 # add a one-element list for uniformity
                 out.append([node])
-            else:
-                # We don't care about other deps
-                pass
         return list(reversed(out))
 
     def deps_list(self):
@@ -190,10 +187,8 @@ class DependencyGraph(object):
         assert self.final, 'Call build() before using the graph.'
         out = []
         for node in nx.topological_sort(self.graph):
-            if is_source_node(node):
-                deps = [v for k, v in self.graph.out_edges([node])
-                        if is_source_node(v)]
-                out.append((node, deps))
+            deps = [v for k, v in self.graph.out_edges([node])]
+            out.append((node, deps))
         return out
 
     def get_all_unresolved(self):

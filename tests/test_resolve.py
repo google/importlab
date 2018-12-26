@@ -300,12 +300,10 @@ class TestResolverUtils(unittest.TestCase):
             self.assertEqual(
                     resolve.infer_module_name(py_file, fspath),
                     "foo.bar")
+            # Standalone Python scripts often don't have extensions.
             self.assertEqual(
-                    resolve.infer_module_name(py_file + "i", fspath),
-                    "")
-            self.assertEqual(
-                    resolve.infer_module_name(d["random/file"], fspath),
-                    "")
+                    resolve.infer_module_name(d["foo/baz"], fspath),
+                    "foo.baz")
             self.assertEqual(
                     resolve.infer_module_name(d["random/src.py"], fspath),
                     "random.src")
