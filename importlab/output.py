@@ -35,7 +35,7 @@ def format_file_node(import_graph, node, indent):
 
 def format_node(import_graph, node, indent):
     """Helper function for print_tree"""
-    if isinstance(node, (graph.Cycle, graph.NodeSet)):
+    if isinstance(node, graph.NodeSet):
         ind = '  ' * indent
         out = [ind + 'cycle {'] + [
                 format_file_node(import_graph, n, indent + 1)
@@ -50,8 +50,6 @@ def print_tree(import_graph):
     def _print_tree(root, indent=0):
         if root in seen:
             return
-        if not graph.is_source_node(root):
-            return
         seen.add(root)
         print(format_node(import_graph, root, indent))
         for _, v in import_graph.graph.out_edges([root]):
@@ -65,8 +63,7 @@ def print_tree(import_graph):
 
 def print_topological_sort(import_graph):
     for node in nx.topological_sort(import_graph.graph):
-        if graph.is_source_node(node):
-            print(import_graph.format(node))
+        print(import_graph.format(node))
 
 
 def formatted_deps_list(import_graph):

@@ -96,9 +96,7 @@ def convert_to_path(name):
 
 def infer_module_name(filename, fspath):
     """Convert a python filename to a module relative to pythonpath."""
-    filename, ext = os.path.splitext(filename)
-    if not ext == '.py':
-        return ''
+    filename, _ = os.path.splitext(filename)
     for f in fspath:
         short_name = f.relative_path(filename)
         if short_name:
@@ -129,8 +127,10 @@ def get_absolute_name(package, relative_name):
     ndots = len(relative_name) - len(name)
     if ndots > len(path):
         return relative_name
-    prefix = ''.join([p + '.' for p in path[:len(path) + 1 - ndots]])
-    return prefix + name
+    absolute_path = path[:len(path) + 1 - ndots]
+    if name:
+        absolute_path.append(name)
+    return '.'.join(absolute_path)
 
 
 class Resolver:
@@ -168,7 +168,13 @@ class Resolver:
         # module, so we try a.b.c and a.b.c.d as names.
         short_name = None
         if item.is_from and not item.is_star:
-            short_name = name[:name.rfind('.')]
+            if '.' in name.lstrip('.'):
+                # The name is something like `a.b.c`, so strip off `.c`.
+                rindex = name.rfind('.')
+            else:
+                # The name is something like `..c`, so strip off just `c`.
+                rindex = name.rfind('.') + 1
+            short_name = name[:rindex]
 
         if import_finder.is_builtin(name):
             filename = name + '.so'

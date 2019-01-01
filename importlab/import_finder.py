@@ -73,7 +73,7 @@ if sys.version_info[0] < 3:
         for part in parts[i:]:
             try:
                 if path:
-                    spec = imp.find_module(part, path)
+                    spec = imp.find_module(part, [path])
                 else:
                     spec = imp.find_module(part)
             except ImportError:
@@ -85,13 +85,12 @@ else:
         """Python 3 helper function for resolve_import."""
         try:
             spec = importlib.util.find_spec(name)
-            if spec:
-                return spec.origin
-        except AttributeError:
-            pass
-        except ImportError:
-            pass
-        return None
+            return spec and spec.origin
+        except Exception:
+            # find_spec may re-raise an arbitrary exception encountered while
+            # inspecting a module. Since we aren't able to get the file path in
+            # this case, we consider the import unresolved.
+            return None
 
 
 def _resolve_import(name):
