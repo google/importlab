@@ -1,3 +1,5 @@
 include LICENSE
 include CHANGELOG
 include *.md *.rst
+recursive-include tests *.py run_all.sh
+graft testdata
