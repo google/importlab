@@ -12,7 +12,21 @@ import sys
 # Pytype doesn't recognize the `major` attribute:
 # https://github.com/google/pytype/issues/127.
 if sys.version_info[0] >= 3:
-    import importlib
+    # Note that `import importlib` does not work: accessing `importlib.util`
+    # will give an attribute error. This is hard to reproduce in a unit test but
+    # can be seen by install importlab in a Python 3 environment and running
+    # `importlab --tree --trim` on a file that imports one of:
+    #   * jsonschema (`pip install jsonschema`)
+    #   * pytype (`pip install pytype`),
+    #   * dotenv (`pip install python-dotenv`)
+    #   * IPython (`pip install ipython`)
+    # A correct output will look like:
+    #   Reading 1 files
+    #   Source tree:
+    #   + foo.py
+    #       :: jsonschema/__init__.py
+    # An incorrect output will be missing the line with the import.
+    import importlib.util
 else:
     import imp
 

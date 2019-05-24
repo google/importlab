@@ -1,3 +1,6 @@
+Version 0.5.1 (2019-05-24)
+* FIX: Correct a broken import
+
 Version 0.5 (2018-12-26)
 * Support `from . import Symbol` style of relative imports
 * Set the default target Python version to the host version
