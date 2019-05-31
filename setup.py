@@ -16,7 +16,7 @@ REQUIRES_PYTHON = '>=2.7.0'
 VERSION = '0.5.1'
 
 REQUIRED = [
-    'networkx',
+    'networkx>=2',
     'six'
 ]
 
