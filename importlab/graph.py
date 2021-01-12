@@ -241,7 +241,7 @@ class ImportGraph(DependencyGraph):
         for imp in parsepy.get_imports(filename, self.env.python_version):
             try:
                 f = r.resolve_import(imp)
-                if f.is_extension():
+                if isinstance(f, resolve.Builtin):
                     continue
                 full_path = os.path.abspath(f.path)
                 resolved.append(full_path)
