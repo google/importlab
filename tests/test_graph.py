@@ -2,6 +2,7 @@
 
 import contextlib
 import os
+import sys
 import unittest
 
 from importlab import environment
@@ -193,7 +194,8 @@ class TestImportGraph(unittest.TestCase):
             self.tempdir.create_file(f, FILES[f])
             for f in FILES]
         self.fs = fs.OSFileSystem(self.tempdir.path)
-        self.env = environment.Environment(fs.Path([self.fs]), (3, 6))
+        self.env = environment.Environment(
+            fs.Path([self.fs]), sys.version_info[:2])
 
     def tearDown(self):
         self.tempdir.teardown()

@@ -12,12 +12,11 @@ DESCRIPTION = 'A library to calculate python dependency graphs.'
 URL = 'https://github.com/google/importlab'
 EMAIL = 'pytype-dev@google.com'
 AUTHOR = 'Google Inc.'
-REQUIRES_PYTHON = '>=2.7.0'
-VERSION = '0.5.1'
+REQUIRES_PYTHON = '>=3.6.0'
+VERSION = '0.6.1'
 
 REQUIRED = [
     'networkx>=2',
-    'six'
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -55,8 +54,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Software Development',
     ],
