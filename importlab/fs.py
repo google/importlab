@@ -2,16 +2,12 @@ import abc
 import os
 import tarfile
 
-# https://github.com/google/pytype/issues/128
-from six import with_metaclass  # pytype: disable=pyi-error
-# pytype: disable=ignored-abstractmethod
-
 
 class FileSystemError(Exception):
     pass
 
 
-class FileSystem(with_metaclass(abc.ABCMeta, object)):
+class FileSystem(abc.ABC):
     """Interface for file systems."""
 
     @abc.abstractmethod
@@ -94,7 +90,7 @@ class OSFileSystem(FileSystem):
         return None
 
 
-class RemappingFileSystem(with_metaclass(abc.ABCMeta, FileSystem)):
+class RemappingFileSystem(FileSystem, abc.ABC):
     """File system wrapper that transforms a path before looking it up."""
 
     def __init__(self, underlying):

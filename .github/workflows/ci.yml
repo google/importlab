@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        python-version: ['3.6','3.7','3.8', '3.9-dev']
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Dependencies
+      run: pip install networkx>=2 pytype
+
+    - name: Type-Check
+      if: matrix.python-version != '3.9-dev'
+      run: pytype -j auto
+
+    - name: Run Tests
+      run: ./tests/run_all.sh

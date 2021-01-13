@@ -1,6 +1,8 @@
 """Tests for graph.py."""
 
 import contextlib
+import os
+import sys
 import unittest
 
 from importlab import environment
@@ -192,7 +194,8 @@ class TestImportGraph(unittest.TestCase):
             self.tempdir.create_file(f, FILES[f])
             for f in FILES]
         self.fs = fs.OSFileSystem(self.tempdir.path)
-        self.env = environment.Environment(fs.Path([self.fs]), (3, 6))
+        self.env = environment.Environment(
+            fs.Path([self.fs]), sys.version_info[:2])
 
     def tearDown(self):
         self.tempdir.teardown()
@@ -204,21 +207,24 @@ class TestImportGraph(unittest.TestCase):
                 [[self.tempdir[x]] for x in ["foo/b.py", "foo/a.py", "x.py"]])
 
     @contextlib.contextmanager
-    def patch_resolve_import(self):
+    def patch_resolve_import(self, mock_resolve_file):
         """Patch resolve_import to always return a System file."""
         resolve_import = resolve.Resolver.resolve_import
 
         def mock_resolve_import(resolver_self, item):
             resolved_file = resolve_import(resolver_self, item)
-            return resolve.System(resolved_file.path, resolved_file.module_name)
+            return mock_resolve_file(resolved_file)
 
         resolve.Resolver.resolve_import = mock_resolve_import
-        yield
-        resolve.Resolver.resolve_import = resolve_import
+        try:
+            yield
+        finally:
+            resolve.Resolver.resolve_import = resolve_import
 
     def test_trim(self):
         sources = [self.tempdir["x.py"]]
-        with self.patch_resolve_import():
+        mock_resolve_file = lambda f: resolve.System(f.path, f.module_name)
+        with self.patch_resolve_import(mock_resolve_file):
             # Untrimmed g1 contains foo.b, the dep of system module foo.a.
             g1 = graph.ImportGraph.create(self.env, sources, trim=False)
             self.assertEqual(
@@ -229,6 +235,29 @@ class TestImportGraph(unittest.TestCase):
             self.assertEqual(
                 g2.sorted_source_files(),
                 [[self.tempdir[x]] for x in ["foo/a.py", "x.py"]])
+
+    def test_system_extension(self):
+        """Tests that system .so files are included in deps."""
+        sources = [self.tempdir["x.py"]]
+        def mock_resolve_file(f):
+            path = os.path.splitext(f.path)[0] + ".so"
+            return resolve.System(path, f.module_name)
+        with self.patch_resolve_import(mock_resolve_file):
+            g = graph.ImportGraph.create(self.env, sources, trim=True)
+            foo_a = os.path.splitext(self.tempdir["foo/a.py"])[0] + ".so"
+            self.assertEqual(g.sorted_source_files(),
+                             [[foo_a], [self.tempdir["x.py"]]])
+
+    def test_builtin_extension(self):
+        """Tests that builtin .so files are ignored."""
+        sources = [self.tempdir["x.py"]]
+        def mock_resolve_file(f):
+            path = os.path.splitext(f.path)[0] + ".so"
+            return resolve.Builtin(path, f.module_name)
+        with self.patch_resolve_import(mock_resolve_file):
+            g = graph.ImportGraph.create(self.env, sources, trim=True)
+            foo_a = os.path.splitext(self.tempdir["foo/a.py"])[0] + ".so"
+            self.assertEqual(g.sorted_source_files(), [[self.tempdir["x.py"]]])
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 """Tests for output.py."""
 
 import contextlib
-import six
+import io
 import sys
 import unittest
 
@@ -42,7 +42,7 @@ class TestOutput(unittest.TestCase):
             self.tempdir.create_file(f, FILES[f])
             for f in FILES]
         self.fs = fs.OSFileSystem(self.tempdir.path)
-        env = environment.Environment(fs.Path([self.fs]), (3, 6))
+        env = environment.Environment(fs.Path([self.fs]), sys.version_info[:2])
         self.graph = graph.ImportGraph.create(env, filenames)
 
     def tearDown(self):
@@ -55,7 +55,7 @@ class TestOutput(unittest.TestCase):
             self.assertTrue(isinstance(val, (str, unicode)))  # noqa: F821
 
     def assertPrints(self, fn):
-        out = six.StringIO()
+        out = io.StringIO()
         with redirect_stdout(out):
             fn(self.graph)
         self.assertTrue(out.getvalue())
