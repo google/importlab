@@ -259,6 +259,20 @@ class TestImportGraph(unittest.TestCase):
             foo_a = os.path.splitext(self.tempdir["foo/a.py"])[0] + ".so"
             self.assertEqual(g.sorted_source_files(), [[self.tempdir["x.py"]]])
 
+    def test_system_extension_notrim(self):
+        """Tests that failing to descend into a .so file's deps is ok."""
+        sources = [self.tempdir["x.py"]]
+        def mock_resolve_file(f):
+            path = os.path.splitext(f.path)[0] + ".so"
+            return resolve.System(path, f.module_name)
+        with open(self.tempdir["foo/a.py"], "w") as f:
+          f.write("syntax_error:")  # simulate an unparseable .so file
+        with self.patch_resolve_import(mock_resolve_file):
+            g = graph.ImportGraph.create(self.env, sources, trim=False)
+            foo_a = os.path.splitext(self.tempdir["foo/a.py"])[0] + ".so"
+            self.assertEqual(g.sorted_source_files(),
+                             [[foo_a], [self.tempdir["x.py"]]])
+
 
 if __name__ == "__main__":
     unittest.main()

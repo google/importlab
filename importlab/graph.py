@@ -108,7 +108,7 @@ class DependencyGraph(object):
                 # Python file, we mark it as unreadable and keep the node in the
                 # graph so importlab's callers can do their own syntax error
                 # handling if desired.
-                if filename.endswith('.py'):
+                if os.path.splitext(filename)[1] in ('.py', '.so'):
                     self.unreadable_files.add(filename)
                 else:
                     self.graph.remove_node(filename)
