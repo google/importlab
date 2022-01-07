@@ -1,13 +1,17 @@
 import abc
+import glob
 import os
 import tarfile
+import tempfile
+
+from six import with_metaclass
 
 
 class FileSystemError(Exception):
     pass
 
 
-class FileSystem(abc.ABC):
+class FileSystem(with_metaclass(abc.ABCMeta, object)):
     """Interface for file systems."""
 
     @abc.abstractmethod
@@ -65,17 +69,26 @@ class OSFileSystem(FileSystem):
     def __init__(self, root):
         assert root is not None
         self.root = root
+        _, tmp_path = tempfile.mkstemp()
+        self._is_case_insensitive = os.path.exists(tmp_path.upper())
 
     def _join(self, path):
         return os.path.join(self.root, path)
 
+    def _matches_path(self, path):
+        if self._is_case_insensitive:
+            return path in glob.glob(path+'*')
+        return True
+
     def isfile(self, path):
         assert path is not None
-        return os.path.isfile(self._join(path))
+        fullpath = self._join(path)
+        return os.path.isfile(fullpath) and self._matches_path(fullpath)
 
     def isdir(self, path):
         assert path is not None
-        return os.path.isdir(self._join(path))
+        fullpath = self._join(path)
+        return os.path.isdir(fullpath) and self._matches_path(fullpath)
 
     def read(self, path):
         with open(self._join(path), 'r') as fi:
@@ -90,7 +103,7 @@ class OSFileSystem(FileSystem):
         return None
 
 
-class RemappingFileSystem(FileSystem, abc.ABC):
+class RemappingFileSystem(with_metaclass(abc.ABCMeta, FileSystem)):
     """File system wrapper that transforms a path before looking it up."""
 
     def __init__(self, underlying):
