@@ -13,7 +13,7 @@ URL = 'https://github.com/google/importlab'
 EMAIL = 'pytype-dev@google.com'
 AUTHOR = 'Google Inc.'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.6.1'
+VERSION = '0.7'
 
 REQUIRED = [
     'networkx>=2',
@@ -50,7 +50,7 @@ setup(
     include_package_data=True,
     license='Apache 2.0',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
