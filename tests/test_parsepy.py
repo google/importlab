@@ -22,6 +22,7 @@ import sys
 from importlab import parsepy
 
 
+@unittest.skipIf(sys.version_info > (3, 0), 'not supported in this python version')
 class TestParsePy(unittest.TestCase):
     """Tests for parsepy.py."""
 
