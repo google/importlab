@@ -25,8 +25,6 @@ from importlab import parsepy
 class TestParsePy(unittest.TestCase):
     """Tests for parsepy.py."""
 
-    PYTHON_VERSION = (2, 7)
-
     def parse(self, src):
         with tempfile.NamedTemporaryFile() as f:
             src = textwrap.dedent(src)
@@ -34,7 +32,7 @@ class TestParsePy(unittest.TestCase):
                 src = src.encode('utf-8')
             f.write(src)
             f.flush()
-            return parsepy.get_imports(f.name, self.PYTHON_VERSION)
+            return parsepy.get_imports(f.name, sys.version_info[:2])
 
     def test_simple(self):
         self.assertEqual(self.parse("""
@@ -184,11 +182,6 @@ class TestParsePy(unittest.TestCase):
       # Author: Thomas Sch\xf6n
       import a
     """), [parsepy.ImportStatement(name='a')])
-
-    def test_print_statement(self):
-        self.assertEqual(self.parse("""
-      print "hello", "world", "!"
-    """), [])
 
     def test_print_function(self):
         self.assertEqual(self.parse("""
