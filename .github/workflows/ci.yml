@@ -14,11 +14,11 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04]
-        python-version: ['3.6','3.7','3.8', '3.9-dev']
+        python-version: ['3.6','3.7','3.8', '3.9','3.10', '3.11-dev']
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: setup python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -26,7 +26,7 @@ jobs:
       run: pip install networkx>=2 pytype
 
     - name: Type-Check
-      if: matrix.python-version != '3.9-dev'
+      if: matrix.python-version != '3.11-dev'
       run: pytype -j auto
 
     - name: Run Tests
