@@ -288,6 +288,27 @@ class TestResolver(unittest.TestCase):
         with self.assertRaises(resolve.ImportException):
             r.resolve_import(imp)
 
+    def testResolveWithImportSource(self):
+        for source, expected_resolution in [("z.py", "pyi"),
+                                            ("z/__init__.py", "pyi"),
+                                            ("z/zz.py", "system"),
+                                            ("z/zz/__init__.py", "system")]:
+            for pyi in ["z.pyi", "z/__init__.pyi"]:
+                with self.subTest(source=source, pyi=pyi):
+                    pyis = {pyi: "contents of z", **PYI_FILES}
+                    pyi_fs = fs.PYIFileSystem(fs.StoredFileSystem(pyis))
+                    self.path = [pyi_fs, self.py_fs]
+                    r = self.make_resolver("a.py", "a")
+                    imp = parsepy.ImportStatement(
+                        name="z.zz", new_name="zz", is_from=True, source=source)
+                    f = r.resolve_import(imp)
+                    if expected_resolution == "pyi":
+                        self.assertEqual(f.fs, pyi_fs)
+                        self.assertEqual(f.path, pyi)
+                    else:
+                        assert expected_resolution == "system"
+                        self.assertTrue(isinstance(f, resolve.System))
+
 
 class TestResolverUtils(unittest.TestCase):
     """Tests for utility functions."""
