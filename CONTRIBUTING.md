@@ -20,6 +20,44 @@ frustration later on.
 All submissions, including submissions by project members, require review. We
 use Github pull requests for this purpose.
 
+### Releasing to PyPI
+
+To release to PyPI:
+
+1. (Optional) We recommend that you release from within a virtualenv:
+   ```console
+   $ python3 -m venv .venv_release
+   $ source .venv_release/bin/activate
+   ```
+1. Make sure that `wheel` and `twine` are installed:
+   ```console
+   $ pip install wheel twine
+   ```
+1. Navigate into the top-level `importlab` directory and build a source
+   distribution and a wheel:
+   ```console
+   $ cd importlab
+   $ python3 setup.py sdist bdist_wheel
+   ```
+   The build command puts the distributions in a `dist` subdirectory and also
+   creates `build` and `importlab.egginfo` subdirectories as side effects.
+1. Upload the distributions to (Test)PyPI:
+   ```console
+   $ twine upload --repository testpypi dist/*
+   ```
+   Remove the `--repository testpypi` to upload to PyPI proper.
+1. (Optional) If you've uploaded to TestPyPI, you can install your new version
+   for testing like so:
+   ```console
+   $ pip install -U --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple importlab
+   ```
+   If you've uploaded to PyPI proper, install with `pip install -U importlab`
+   as usual.
+1. Clean up the subdirectories created by the build command:
+   ```console
+   $ rm -rf build/ dist/ importlab.egg-info/
+   ```
+
 ### The small print
 Contributions made by corporations are covered by a different agreement than
 the one mentioned above; they're covered by the the Software Grant and
