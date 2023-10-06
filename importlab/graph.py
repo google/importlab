@@ -120,7 +120,10 @@ class DependencyGraph(object):
                     queue.append(f)
                     seen.add(f)
                 self.graph.add_node(f)
-                self.graph.add_edge(filename, f)
+                if filename != f:
+                  # Prevent self edges if our dependency checker mistakenly
+                  # detects a module as its own direct dependency.
+                  self.graph.add_edge(filename, f)
 
     def shrink_to_node(self, scc):
         """Shrink a strongly connected component into a node."""

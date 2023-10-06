@@ -67,6 +67,11 @@ SIMPLE_CYCLIC_DEPS = {
         "b.py": (["d.py", "a.py"], ["f"], {}),
 }
 
+SELF_DEPS = {
+    "a.py": (["a.py", "b.py", "c.py"], [], {}),
+    "b.py": (["a.py", "b.py", "d.py"], [], {}),
+}
+
 SIMPLE_SYSTEM_DEPS = {
         "a.py": (["b.py"], [], {"b.py": resolve.System("b.py", "b")}),
         "b.py": (["c.py"], [], {"c.py": resolve.System("c.py", "c")}),
@@ -114,6 +119,18 @@ class TestDependencyGraph(unittest.TestCase):
         self.assertEqual(len(cycles), 1)
         self.assertEqual(set(cycles[0].nodes), set(["a.py", "b.py"]))
         self.assertEqual(g.get_all_unresolved(), set(["e", "f"]))
+        sources = g.ordered_sorted_source_files()
+        self.check_order(sources, ["d.py"], ["a.py", "b.py"])
+        self.check_order(sources, ["c.py"], ["a.py", "b.py"])
+
+    def test_self_dep(self):
+        g = FakeImportGraph(SELF_DEPS)
+        g.add_file_recursive("a.py")
+        g.build()
+        cycles = [x for x, ys in g.deps_list()
+                  if isinstance(x, graph.NodeSet)]
+        self.assertEqual(len(cycles), 1)
+        self.assertEqual(set(cycles[0].nodes), set(["a.py", "b.py"]))
         sources = g.ordered_sorted_source_files()
         self.check_order(sources, ["d.py"], ["a.py", "b.py"])
         self.check_order(sources, ["c.py"], ["a.py", "b.py"])
